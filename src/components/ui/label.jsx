@@ -1,15 +1,15 @@
-import * as React from "react"
-import { cn } from "./button"
+import React from "react";
 
-const Label = React.forwardRef(({ className, ...props }, ref) => (
-  <label
-    ref={ref}
-    className={cn(
-      "text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70",
-      className
-    )}
-    {...props}
-  />
-))
-Label.displayName = "Label"
-export { Label }
+export function Label({ children, className = "", htmlFor, ...props }) {
+  return (
+    <label
+      htmlFor={htmlFor}
+      className={`text-xs font-semibold uppercase tracking-wider text-gray-400 block mb-1.5 ${className}`}
+      {...props}
+    >
+      {children}
+    </label>
+  );
+}
+
+export default Label;

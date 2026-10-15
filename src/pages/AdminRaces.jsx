@@ -1,450 +1,642 @@
-import { useEffect, useState, useMemo } from 'react';
-import { db } from '@/api/client';
-import { useAuth } from '@/lib/AuthContext';
+import React, { useState, useEffect, useRef } from 'react';
 import {
-  Loader2, Plus, Pencil, Trash2, X, ShieldAlert, Sparkles,
-  Search, Copy, ExternalLink, Mountain, Calendar, Users, MapPin
+  RefreshCw,
+  Trash2,
+  ExternalLink,
+  Plus,
+  CheckCircle2,
+  AlertTriangle,
+  Wand2,
+  Link2,
+  FileText,
+  KeyRound,
+  Loader2,
+  Server,
+  Globe,
+  SearchCheck,
 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { importRunneaRaces } from '@/services/runneaSync';
+import { getRaces, upsertRace, deleteRace, FALLBACK_IMAGE } from '@/services/raceStore';
+import {
+  extractRaceWithAI,
+  getAiSettings,
+  saveAiSettings,
+  getServerStatus,
+  getServerSettings,
+  saveServerSettings,
+  testAI,
+  DEFAULT_MODEL,
+  findOfficialWebAI,
+  applyWebFinding,
+} from '@/services/aiRaceService';
+import { lookupPreset } from '@/lib/places';
 
-const DISTANCES = ['5K', '8K', '10K', 'Media maratón', 'Maratón', 'Trail', 'Ultra Trail', 'OCR / Obstáculos'];
-const STATUSES = ['abierta', 'cerrada', 'finalizada'];
-
-const DISTANCE_DEFAULTS = {
-  '5K': 5,
-  '8K': 8,
-  '10K': 10,
-  'Media maratón': 21.097,
-  'Maratón': 42.195,
+const EMPTY_FORM = {
+  id: '',
+  name: '',
+  discipline: 'Trail running',
+  price: '',
+  date: '',
+  endDate: '',
+  location: '',
+  distanceText: '',
+  image: '',
+  link: '',
+  lat: '',
+  lon: '',
+  description: '',
+  source: 'manual',
 };
 
-const emptyForm = {
-  name: '', date: '', distance: '10K', distance_km: 10, elevation_gain: 0,
-  city: 'Terrassa', location: '', start_time: '09:00', price: 0, spots: 500,
-  image: '', description: '', status: 'abierta', registration_url: '', source: 'manual',
-};
+const selectCls =
+  'flex h-10 w-full rounded-xl border border-white/10 bg-[#0B0F19]/60 px-3 py-2 text-sm text-gray-100 focus:border-orange-500 focus:outline-none';
 
-function formatShort(iso) {
-  if (!iso) return '—';
-  return new Date(iso).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
+function Notice({ notice }) {
+  if (!notice) return null;
+  const ok = notice.type !== 'error';
+  const Icon = ok ? CheckCircle2 : AlertTriangle;
+  return (
+    <div
+      className={`p-3 rounded-xl text-xs flex items-start gap-2 border ${
+        ok ? 'bg-white/5 border-white/10 text-orange-300' : 'bg-red-500/10 border-red-500/30 text-red-300'
+      }`}
+    >
+      <Icon className="w-4 h-4 shrink-0 mt-px" />
+      <div className="space-y-1">
+        <p>{notice.text}</p>
+        {notice.details?.length > 0 && (
+          <ul className="text-[11px] text-gray-400 list-disc pl-4">
+            {notice.details.map((d) => (
+              <li key={d}>{d}</li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
+  );
 }
 
 export default function AdminRaces() {
-  const { user } = useAuth();
   const [races, setRaces] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState(emptyForm);
-  const [saving, setSaving] = useState(false);
-  const [showForm, setShowForm] = useState(false);
-  const [importCommunity, setImportCommunity] = useState('catalunya');
-  const [importing, setImporting] = useState(false);
-  const [importMsg, setImportMsg] = useState('');
+  const [syncing, setSyncing] = useState(false);
+  const [notice, setNotice] = useState(null);
+  const [server, setServer] = useState({ online: null, ai: false });
 
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterDistance, setFilterDistance] = useState('all');
-  const [filterStatus, setFilterStatus] = useState('all');
+  const [aiMode, setAiMode] = useState('search'); // 'search' | 'url' | 'text'
+  const [checkingId, setCheckingId] = useState(null); // carrera en revisión con IA
+  const [bulk, setBulk] = useState(null); // {done, total}
+  const [aiInput, setAiInput] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [aiSettings, setAiSettings] = useState(() => {
+    getAiSettings(); // limpia keys antiguas guardadas en el navegador
+    return { provider: '', apiKey: '', model: '' };
+  });
 
-  const loadRaces = async () => {
-    setLoading(true);
+  const [form, setForm] = useState(EMPTY_FORM);
+  const formRef = useRef(null);
+
+  const loadData = () => setRaces(getRaces() || []);
+
+  useEffect(() => {
+    loadData();
+    getServerStatus().then(setServer);
+    window.addEventListener('races:updated', loadData);
+    return () => window.removeEventListener('races:updated', loadData);
+  }, []);
+
+  const flash = (n, ms = 6000) => {
+    setNotice(n);
+    if (ms) setTimeout(() => setNotice((cur) => (cur === n ? null : cur)), ms);
+  };
+
+  const handleSync = async () => {
+    setSyncing(true);
+    setNotice(null);
     try {
-      const res = await db.entities.Race.filter({}, { sort: 'date', limit: 200 });
-      setRaces(res.items || []);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => { loadRaces(); }, []);
-
-  const filteredRaces = useMemo(() => {
-    return races.filter((r) => {
-      const matchesSearch =
-        !searchTerm ||
-        r.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        r.city?.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesDist = filterDistance === 'all' || r.distance === filterDistance;
-      const matchesStatus = filterStatus === 'all' || r.status === filterStatus;
-      return matchesSearch && matchesDist && matchesStatus;
-    });
-  }, [races, searchTerm, filterDistance, filterStatus]);
-
-  const stats = useMemo(() => {
-    const openCount = races.filter((r) => r.status === 'abierta').length;
-    const totalReg = races.reduce((acc, r) => acc + (Number(r.registered) || 0), 0);
-    return { total: races.length, openCount, totalReg };
-  }, [races]);
-
-  if (user?.role !== 'admin') {
-    return (
-      <div className="text-center py-20">
-        <ShieldAlert className="w-8 h-8 mx-auto text-muted-foreground/50" />
-        <p className="mt-3 text-muted-foreground">Solo los administradores pueden gestionar carreras.</p>
-      </div>
-    );
-  }
-
-  const openNew = () => { setEditing(null); setForm(emptyForm); setShowForm(true); };
-
-  const openEdit = (race) => {
-    setEditing(race);
-    setForm({
-      name: race.name || '', date: race.date || '', distance: race.distance || '10K',
-      distance_km: race.distance_km ?? 10, elevation_gain: race.elevation_gain ?? 0,
-      city: race.city || '', location: race.location || '',
-      start_time: race.start_time || '09:00', price: race.price ?? 0, spots: race.spots ?? 0,
-      image: race.image || '', description: race.description || '', status: race.status || 'abierta',
-      registration_url: race.registration_url || '', source: race.source || 'manual',
-    });
-    setShowForm(true);
-  };
-
-  const duplicateRace = async (race) => {
-    const copy = {
-      ...race,
-      id: undefined,
-      name: `${race.name} (Copia)`,
-      registered: 0,
-      source: 'manual',
-    };
-    await db.entities.Race.create(copy);
-    await loadRaces();
-  };
-
-  const handleDistanceChange = (newDist) => {
-    const defaultKm = DISTANCE_DEFAULTS[newDist];
-    setForm((prev) => ({
-      ...prev,
-      distance: newDist,
-      distance_km: defaultKm !== undefined ? defaultKm : prev.distance_km,
-    }));
-  };
-
-  const save = async (e) => {
-    e.preventDefault();
-    setSaving(true);
-    try {
-      const payload = {
-        ...form,
-        distance_km: Number(form.distance_km),
-        elevation_gain: Number(form.elevation_gain || 0),
-        price: Number(form.price),
-        spots: Number(form.spots),
-      };
-      if (editing) {
-        await db.entities.Race.update(editing.id, payload);
-      } else {
-        payload.registered = 0;
-        await db.entities.Race.create(payload);
-      }
-      setShowForm(false);
-      await loadRaces();
+      const r = await importRunneaRaces({ force: true });
+      flash({ type: r.ok ? 'ok' : 'error', text: r.message, details: r.errors }, r.ok ? 6000 : 0);
     } catch (err) {
-      console.error(err);
+      flash({ type: 'error', text: `Error al sincronizar: ${err.message}` }, 0);
     } finally {
-      setSaving(false);
+      setSyncing(false);
     }
   };
 
-  const remove = async (race) => {
-    if (!confirm(`¿Eliminar "${race.name}"?`)) return;
+  const handleExtract = async () => {
+    const value = aiInput.trim();
+    if (!value) return;
+    if (aiMode === 'url' && !/^https?:\/\//i.test(value)) {
+      flash({ type: 'error', text: 'Introduce una URL completa (https://…).' });
+      return;
+    }
+    setAiLoading(true);
+    setNotice(null);
     try {
-      await db.entities.Race.delete(race.id);
-      await loadRaces();
-    } catch (err) { console.error(err); }
+      const race = await extractRaceWithAI(
+        aiMode === 'url' ? { url: value } : aiMode === 'search' ? { query: value } : { text: value }
+      );
+      setForm({
+        ...EMPTY_FORM,
+        ...Object.fromEntries(Object.entries(race).map(([k, v]) => [k, v ?? ''])),
+        id: '',
+        source: 'ai',
+      });
+      flash({ type: 'ok', text: 'Ficha generada con IA. Revisa los campos y pulsa “Guardar y publicar”.' });
+      setTimeout(() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+    } catch (err) {
+      flash({ type: 'error', text: err.message }, 0);
+    } finally {
+      setAiLoading(false);
+    }
   };
 
-  const handleImport = async () => {
-    setImporting(true);
-    setImportMsg('');
-    await new Promise((r) => setTimeout(r, 600));
-    setImportMsg('Carreras sincronizadas correctamente con el catálogo.');
-    setImporting(false);
-    await loadRaces();
+  const hostOf = (u) => {
+    try {
+      return new URL(u).hostname.replace(/^www\./, '');
+    } catch {
+      return u || '—';
+    }
   };
 
-  const statusBadge = (status) => {
-    const styles = {
-      abierta: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30',
-      cerrada: 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30',
-      finalizada: 'bg-slate-500/15 text-slate-600 dark:text-slate-400 border-slate-500/30',
-    };
-    return (
-      <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${styles[status] || styles.abierta}`}>
-        {status}
-      </span>
+  // Busca con Gemini + Google la web oficial actual de UNA carrera
+  const checkWeb = async (race, { quiet = false } = {}) => {
+    setCheckingId(race.id);
+    try {
+      const f = await findOfficialWebAI(race, { force: true });
+      const updated = applyWebFinding(race, f);
+      upsertRace({ ...updated, webCheckedAt: f.at });
+      if (!quiet) {
+        const changed = updated.link !== race.link;
+        flash(
+          {
+            type: changed || f.officialUrl ? 'ok' : 'error',
+            text: changed
+              ? `${race.name}: web actualizada ${hostOf(race.link)} → ${hostOf(updated.link)}${f.verified ? ' (verificada)' : ''}.`
+              : f.officialUrl
+              ? `${race.name}: la web ${hostOf(updated.link)} es correcta${f.verified ? ' (verificada)' : ''}.`
+              : `${race.name}: la IA no encontró una web oficial fiable.`,
+            details: [f.notes, ...(f.rejected || []).map((r) => `Descartada: ${r}`)].filter(Boolean),
+          },
+          changed ? 8000 : 0
+        );
+      }
+      return updated.link !== race.link;
+    } catch (err) {
+      if (!quiet) flash({ type: 'error', text: err.message }, 0);
+      throw err;
+    } finally {
+      setCheckingId(null);
+    }
+  };
+
+  // Revisa en lote las próximas carreras aún no revisadas (cuota gratuita: de 10 en 10)
+  const handleBulkCheck = async () => {
+    const today = new Date().toISOString().slice(0, 10);
+    const todo = races
+      .filter((r) => !r.webCheckedAt && (!r.date || r.date >= today))
+      .sort((a, b) => (a.date || '').localeCompare(b.date || ''))
+      .slice(0, 10);
+    if (!todo.length) {
+      flash({ type: 'ok', text: 'Todas las próximas carreras ya están revisadas.' });
+      return;
+    }
+    let changed = 0;
+    const errors = [];
+    setBulk({ done: 0, total: todo.length });
+    for (const [i, r] of todo.entries()) {
+      try {
+        if (await checkWeb(r, { quiet: true })) changed++;
+      } catch (e) {
+        errors.push(`${r.name}: ${e.message}`);
+        if (/cuota|API key/i.test(e.message)) break;
+      }
+      setBulk({ done: i + 1, total: todo.length });
+    }
+    setBulk(null);
+    flash(
+      { type: errors.length && !changed ? 'error' : 'ok', text: `Revisadas ${todo.length} carreras · ${changed} webs corregidas.`, details: errors },
+      errors.length ? 0 : 8000
     );
   };
 
-  const inputCls = 'mt-1 w-full px-3 py-2 rounded-xl border border-border bg-background text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20';
+  const [serverAi, setServerAi] = useState(null); // {provider, providerLabel, key (enmascarada), source, model, providers}
+  const [aiTest, setAiTest] = useState(null); // {loading} | {ok, model} | {ok:false, error}
+
+  useEffect(() => {
+    getServerSettings()
+      .then((s) => {
+        setServerAi(s);
+        setAiSettings((a) => ({ ...a, provider: s.provider || 'gemini', model: s.model || '' }));
+      })
+      .catch(() => setServerAi(null));
+  }, []);
+
+  const runAiTest = async (opts = {}) => {
+    setAiTest({ loading: true });
+    setAiTest(await testAI(opts));
+  };
+
+  const handleSaveSettings = async () => {
+    try {
+      const saved = await saveServerSettings({
+        provider: aiSettings.provider,
+        apiKey: aiSettings.apiKey ? aiSettings.apiKey.trim() : undefined,
+        model: aiSettings.model,
+      });
+      setServerAi(saved);
+      setAiSettings({ provider: saved.provider, apiKey: '', model: saved.model || '' });
+      getServerStatus().then(setServer);
+      flash({ type: 'ok', text: 'Ajustes de IA guardados en el servidor: se mantienen aunque cambies de navegador o reinicies.' });
+      runAiTest();
+    } catch (e) {
+      flash({ type: 'error', text: e.message }, 0);
+    }
+  };
+
+  const handleCreateRace = (e) => {
+    e.preventDefault();
+    if (!form.name || !form.date) return;
+
+    let lat = form.lat === '' ? null : Number(form.lat);
+    let lon = form.lon === '' ? null : Number(form.lon);
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+      const preset = lookupPreset(form.location);
+      lat = preset?.lat ?? null;
+      lon = preset?.lon ?? null;
+    }
+
+    upsertRace({
+      id: form.id || `${form.source}-${Date.now()}`,
+      source: form.source || 'manual',
+      name: form.name.trim(),
+      discipline: form.discipline,
+      price: form.price === '' ? null : Number(form.price),
+      date: form.date,
+      endDate: form.endDate && form.endDate > form.date ? form.endDate : '',
+      location: form.location.trim() || 'Cataluña',
+      distanceText: form.distanceText.trim(),
+      image: form.image.trim() || FALLBACK_IMAGE,
+      link: form.link.trim() || '#',
+      description: form.description?.trim() || '',
+      lat,
+      lon,
+    });
+    flash({ type: 'ok', text: `“${form.name}” publicada en el calendario.` });
+    setForm(EMPTY_FORM);
+  };
+
+  const handleEdit = (r) => {
+    setForm({ ...EMPTY_FORM, ...Object.fromEntries(Object.entries(r).map(([k, v]) => [k, v ?? ''])) });
+    formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
+  const counts = races.reduce((acc, r) => ({ ...acc, [r.source || 'otros']: (acc[r.source || 'otros'] || 0) + 1 }), {});
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
+    <div className="flex-1 px-4 py-5 sm:p-6 md:p-10 max-w-6xl mx-auto w-full space-y-8 bg-[#0B0F19] min-h-screen text-gray-100">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#111827] border border-white/10 rounded-2xl p-6">
         <div>
-          <h1 className="font-display text-3xl font-extrabold tracking-tight">Administrar carreras</h1>
-          <p className="mt-1 text-muted-foreground">Crea, edita, duplica y gestiona los eventos del calendario.</p>
+          <h1 className="text-2xl font-bold text-white mb-1">Administración y Sincronización</h1>
+          <p className="text-gray-400 text-xs">
+            Actualiza el calendario desde todas las fuentes, crea fichas con el asistente IA o añádelas a mano.
+          </p>
+          <p className="text-[11px] mt-2 flex items-center gap-1.5 text-gray-500">
+            <Server className="w-3 h-3" />
+            {server.online === null
+              ? 'Comprobando backend local…'
+              : server.online
+              ? `Servidor activo · Asistente IA ${server.ai ? `conectado (${serverAi?.providerLabel || server.aiProvider})` : 'sin configurar'}`
+              : 'Backend local no disponible (arranca con npm run dev)'}
+          </p>
         </div>
-        <button
-          onClick={openNew}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition shadow-sm"
-        >
-          <Plus className="w-4 h-4" /> Nueva carrera
-        </button>
+
+        <Button onClick={handleSync} disabled={syncing} className="flex items-center gap-2 px-5">
+          <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
+          <span>{syncing ? 'Sincronizando…' : 'Sincronizar carreras'}</span>
+        </Button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <div className="rounded-2xl border border-border bg-card p-4 flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-primary/10 text-primary"><Calendar className="w-5 h-5" /></div>
-          <div>
-            <p className="text-xs text-muted-foreground">Total Carreras</p>
-            <p className="text-xl font-bold">{stats.total}</p>
-          </div>
-        </div>
-        <div className="rounded-2xl border border-border bg-card p-4 flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-500"><Sparkles className="w-5 h-5" /></div>
-          <div>
-            <p className="text-xs text-muted-foreground">Inscripciones Abiertas</p>
-            <p className="text-xl font-bold">{stats.openCount}</p>
-          </div>
-        </div>
-        <div className="rounded-2xl border border-border bg-card p-4 flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-500"><Users className="w-5 h-5" /></div>
-          <div>
-            <p className="text-xs text-muted-foreground">Corredores Apuntados</p>
-            <p className="text-xl font-bold">{stats.totalReg.toLocaleString('es-ES')}</p>
-          </div>
-        </div>
-      </div>
+      <Notice notice={notice} />
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
-        <div className="lg:col-span-5 flex flex-wrap items-center gap-2 rounded-2xl border border-border bg-card p-3">
-          <Sparkles className="w-4 h-4 text-primary shrink-0" />
-          <span className="text-sm font-medium">Sincronizar:</span>
-          <select
-            value={importCommunity}
-            onChange={(e) => setImportCommunity(e.target.value)}
-            className="px-2.5 py-1.5 rounded-lg border border-border bg-background text-sm outline-none focus:border-primary"
-          >
-            <option value="catalunya">Cataluña</option>
-            <option value="madrid">Madrid</option>
-            <option value="espana">Toda España</option>
-          </select>
-          <button
-            onClick={handleImport}
-            disabled={importing}
-            className="px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 disabled:opacity-50 transition"
-          >
-            {importing ? 'Sincronizando…' : 'Actualizar'}
-          </button>
-          {importMsg && <span className="text-xs text-muted-foreground w-full mt-1">{importMsg}</span>}
+      {/* Ingesta con IA */}
+      <section className="bg-[#111827] border border-white/10 rounded-2xl p-6 space-y-4">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <Wand2 className="w-5 h-5 text-orange-500" />
+            <h2 className="text-base font-semibold text-white">Asistente IA: añadir carreras</h2>
+          </div>
+          <Button variant="ghost" size="sm" className="gap-1.5" onClick={() => setShowSettings((s) => !s)}>
+            <KeyRound className="w-3.5 h-3.5" />
+            Configurar IA
+          </Button>
         </div>
 
-        <div className="lg:col-span-7 flex flex-wrap sm:flex-nowrap items-center gap-2 rounded-2xl border border-border bg-card p-3">
-          <div className="relative flex-1 min-w-[160px]">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <input
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Buscar carrera o ciudad..."
-              className="w-full pl-9 pr-3 py-1.5 rounded-lg border border-border bg-background text-sm outline-none focus:border-primary"
-            />
-          </div>
-          <select
-            value={filterDistance}
-            onChange={(e) => setFilterDistance(e.target.value)}
-            className="px-2.5 py-1.5 rounded-lg border border-border bg-background text-sm outline-none focus:border-primary"
-          >
-            <option value="all">Todas las distancias</option>
-            {DISTANCES.map((d) => <option key={d} value={d}>{d}</option>)}
-          </select>
-          <select
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            className="px-2.5 py-1.5 rounded-lg border border-border bg-background text-sm outline-none focus:border-primary"
-          >
-            <option value="all">Todos los estados</option>
-            {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
-          </select>
-        </div>
-      </div>
-
-      {loading ? (
-        <div className="flex justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
-      ) : filteredRaces.length === 0 ? (
-        <div className="text-center py-16 rounded-2xl border border-dashed border-border">
-          <p className="text-muted-foreground">No se encontraron carreras con esos filtros.</p>
-        </div>
-      ) : (
-        <div className="overflow-hidden rounded-2xl border border-border bg-card">
-          <table className="w-full text-sm">
-            <thead className="bg-muted/60 text-muted-foreground text-xs uppercase tracking-wide">
-              <tr>
-                <th className="text-left font-medium px-4 py-3">Carrera</th>
-                <th className="text-left font-medium px-4 py-3 hidden sm:table-cell">Fecha</th>
-                <th className="text-left font-medium px-4 py-3 hidden md:table-cell">Modalidad / Desnivel</th>
-                <th className="text-left font-medium px-4 py-3 hidden lg:table-cell">Estado</th>
-                <th className="text-left font-medium px-4 py-3 hidden md:table-cell">Ocupación</th>
-                <th className="text-right font-medium px-4 py-3">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {filteredRaces.map((race) => {
-                const ratio = race.spots > 0 ? Math.min(100, Math.round(((race.registered || 0) / race.spots) * 100)) : 0;
-                return (
-                  <tr key={race.id} className="hover:bg-muted/30 transition">
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <p className="font-semibold line-clamp-1">{race.name}</p>
-                        {race.registration_url && (
-                          <a href={race.registration_url} target="_blank" rel="noreferrer" className="text-muted-foreground hover:text-primary">
-                            <ExternalLink className="w-3.5 h-3.5" />
-                          </a>
-                        )}
-                      </div>
-                      <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                        <MapPin className="w-3 h-3" /> {race.city || 'Sin ciudad'}
-                        <span className="sm:hidden"> · {formatShort(race.date)} · {race.distance}</span>
-                      </p>
-                    </td>
-                    <td className="px-4 py-3 hidden sm:table-cell whitespace-nowrap">
-                      <p>{formatShort(race.date)}</p>
-                      <p className="text-xs text-muted-foreground">{race.start_time || '09:00'}</p>
-                    </td>
-                    <td className="px-4 py-3 hidden md:table-cell">
-                      <span className="font-medium">{race.distance}</span>
-                      <span className="text-xs text-muted-foreground ml-1">({race.distance_km} km)</span>
-                      {race.elevation_gain > 0 && (
-                        <p className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1 mt-0.5">
-                          <Mountain className="w-3 h-3" /> +{race.elevation_gain} m D+
-                        </p>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 hidden lg:table-cell">
-                      {statusBadge(race.status)}
-                    </td>
-                    <td className="px-4 py-3 hidden md:table-cell w-40">
-                      <div className="flex justify-between text-xs mb-1">
-                        <span>{race.registered || 0} / {race.spots || 0}</span>
-                        <span className="text-muted-foreground">{ratio}%</span>
-                      </div>
-                      <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
-                        <div className="h-full bg-primary rounded-full" style={{ width: `${ratio}%` }} />
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center justify-end gap-1">
-                        <button onClick={() => duplicateRace(race)} className="grid place-items-center w-8 h-8 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition" title="Duplicar carrera">
-                          <Copy className="w-4 h-4" />
-                        </button>
-                        <button onClick={() => openEdit(race)} className="grid place-items-center w-8 h-8 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition" title="Editar">
-                          <Pencil className="w-4 h-4" />
-                        </button>
-                        <button onClick={() => remove(race)} className="grid place-items-center w-8 h-8 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition" title="Eliminar">
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {showForm && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-          <div className="absolute inset-0 bg-foreground/40 backdrop-blur-sm" onClick={() => setShowForm(false)} />
-          <div className="relative w-full sm:max-w-lg bg-card rounded-t-3xl sm:rounded-3xl border border-border shadow-2xl max-h-[92vh] overflow-y-auto">
-            <div className="sticky top-0 flex items-center justify-between px-5 py-4 border-b border-border bg-card z-10">
-              <h2 className="font-heading text-lg font-bold">{editing ? 'Editar carrera' : 'Nueva carrera'}</h2>
-              <button onClick={() => setShowForm(false)} className="grid place-items-center w-8 h-8 rounded-lg text-muted-foreground hover:bg-muted transition">
-                <X className="w-4 h-4" />
-              </button>
+        {showSettings && (
+          <div className="space-y-3 p-4 rounded-xl bg-black/20 border border-white/5">
+            <p className="text-xs text-gray-400">
+              Ahora:{' '}
+              <strong className="text-gray-200">
+                {serverAi?.key
+                  ? `${serverAi.providerLabel} · ${serverAi.key} (${serverAi.source === 'env' ? 'del .env' : 'guardada en el servidor'})`
+                  : 'sin configurar'}
+              </strong>
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-[200px_1fr_200px_auto] gap-3 items-end">
+              <div>
+                <Label htmlFor="aiprov">Proveedor</Label>
+                <select
+                  id="aiprov"
+                  value={aiSettings.provider || 'gemini'}
+                  onChange={(e) => setAiSettings({ ...aiSettings, provider: e.target.value, model: '' })}
+                  className={selectCls}
+                >
+                  {(serverAi?.providers || [
+                    { id: 'gemini', label: 'Google Gemini' },
+                    { id: 'openai', label: 'OpenAI (ChatGPT)' },
+                    { id: 'anthropic', label: 'Anthropic (Claude)' },
+                  ]).map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <Label htmlFor="apikey">API key</Label>
+                <Input
+                  id="apikey"
+                  type="password"
+                  autoComplete="off"
+                  value={aiSettings.apiKey}
+                  onChange={(e) => setAiSettings({ ...aiSettings, apiKey: e.target.value })}
+                  placeholder={
+                    serverAi?.key && aiSettings.provider === serverAi.provider
+                      ? 'Déjalo vacío para mantener la actual'
+                      : serverAi?.providers?.find((p) => p.id === (aiSettings.provider || 'gemini'))?.keyHint || ''
+                  }
+                />
+              </div>
+              <div>
+                <Label htmlFor="model">Modelo (opcional)</Label>
+                <Input
+                  id="model"
+                  value={aiSettings.model}
+                  onChange={(e) => setAiSettings({ ...aiSettings, model: e.target.value })}
+                  placeholder="El recomendado"
+                />
+              </div>
+              <Button onClick={handleSaveSettings}>Guardar</Button>
             </div>
-            <form onSubmit={save} className="p-5 space-y-4">
-              <div>
-                <label className="text-sm font-medium">Nombre</label>
-                <input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={inputCls} />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-sm font-medium">Fecha</label>
-                  <input required type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} className={inputCls} />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Hora de salida</label>
-                  <input type="time" value={form.start_time} onChange={(e) => setForm({ ...form, start_time: e.target.value })} className={inputCls} />
-                </div>
-              </div>
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="text-sm font-medium">Modalidad</label>
-                  <select value={form.distance} onChange={(e) => handleDistanceChange(e.target.value)} className={inputCls}>
-                    {DISTANCES.map((d) => <option key={d} value={d}>{d}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Distancia (Km)</label>
-                  <input type="number" step="0.001" value={form.distance_km} onChange={(e) => setForm({ ...form, distance_km: e.target.value })} className={inputCls} />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Desnivel D+ (m)</label>
-                  <input type="number" value={form.elevation_gain} onChange={(e) => setForm({ ...form, elevation_gain: e.target.value })} placeholder="0" className={inputCls} />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-sm font-medium">Ciudad</label>
-                  <input required value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} className={inputCls} />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Lugar de salida</label>
-                  <input value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} className={inputCls} />
-                </div>
-              </div>
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="text-sm font-medium">Precio (€)</label>
-                  <input type="number" step="0.01" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} className={inputCls} />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Plazas</label>
-                  <input type="number" value={form.spots} onChange={(e) => setForm({ ...form, spots: e.target.value })} className={inputCls} />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Estado</label>
-                  <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className={inputCls}>
-                    {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
-                  </select>
-                </div>
-              </div>
-              <div>
-                <label className="text-sm font-medium">Imagen (URL)</label>
-                <input value={form.image} onChange={(e) => setForm({ ...form, image: e.target.value })} placeholder="https://..." className={inputCls} />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Enlace de inscripción (web oficial)</label>
-                <input value={form.registration_url} onChange={(e) => setForm({ ...form, registration_url: e.target.value })} placeholder="https://..." className={inputCls} />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Descripción</label>
-                <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={3} className={inputCls + ' resize-none'} />
-              </div>
-              <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setShowForm(false)} className="flex-1 py-2.5 rounded-xl border border-border text-sm font-medium text-muted-foreground hover:text-foreground transition">
-                  Cancelar
-                </button>
-                <button type="submit" disabled={saving} className="flex-1 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition disabled:opacity-50">
-                  {saving ? 'Guardando…' : editing ? 'Guardar cambios' : 'Crear carrera'}
-                </button>
-              </div>
-            </form>
+            <div className="flex flex-wrap items-center gap-3">
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() =>
+                  runAiTest({ provider: aiSettings.provider, apiKey: aiSettings.apiKey.trim() || undefined, model: aiSettings.model || undefined })
+                }
+                disabled={aiTest?.loading}
+              >
+                {aiTest?.loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null} Probar conexión
+              </Button>
+              {aiTest && !aiTest.loading && (
+                <span className={`text-xs ${aiTest.ok ? 'text-emerald-400' : 'text-red-300'}`}>
+                  {aiTest.ok ? `✓ ${aiTest.provider} responde (${aiTest.model})` : aiTest.error}
+                </span>
+              )}
+            </div>
+            <p className="text-[11px] text-gray-500">
+              Sirve cualquiera de los tres: Google Gemini, OpenAI o Anthropic (Claude). La key se guarda solo en el servidor
+              (.cache/settings.json) y no se borra al cambiar de navegador.
+            </p>
+          </div>
+        )}
+
+        <div className="flex flex-wrap gap-1.5">
+          <Button variant={aiMode === 'search' ? 'default' : 'secondary'} size="sm" className="gap-1.5" onClick={() => setAiMode('search')}>
+            <SearchCheck className="w-3.5 h-3.5" /> Buscar en la web
+          </Button>
+          <Button variant={aiMode === 'url' ? 'default' : 'secondary'} size="sm" className="gap-1.5" onClick={() => setAiMode('url')}>
+            <Link2 className="w-3.5 h-3.5" /> Desde URL
+          </Button>
+          <Button variant={aiMode === 'text' ? 'default' : 'secondary'} size="sm" className="gap-1.5" onClick={() => setAiMode('text')}>
+            <FileText className="w-3.5 h-3.5" /> Pegar texto
+          </Button>
+        </div>
+
+        {aiMode === 'search' ? (
+          <Input
+            value={aiInput}
+            onChange={(e) => setAiInput(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleExtract()}
+            placeholder="Nombre de la carrera, ej. Mitja Marató de Terrassa 2027"
+          />
+        ) : aiMode === 'url' ? (
+          <Input
+            value={aiInput}
+            onChange={(e) => setAiInput(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleExtract()}
+            placeholder="https://web-oficial-de-la-carrera.com/inscripciones"
+          />
+        ) : (
+          <textarea
+            value={aiInput}
+            onChange={(e) => setAiInput(e.target.value)}
+            rows={6}
+            placeholder="Pega aquí el texto de la ficha, el post de Instagram, el reglamento…"
+            className="w-full rounded-xl border border-white/10 bg-[#0B0F19]/60 px-3 py-2 text-sm text-gray-100 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none"
+          />
+        )}
+
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-[11px] text-gray-500">
+            {aiMode === 'search'
+              ? 'La IA busca en internet la web oficial actual, la verifica y rellena el formulario. Revisa antes de guardar.'
+              : 'La IA rellena el formulario de abajo; nada se publica hasta que lo revises y guardes.'}
+          </p>
+          <Button onClick={handleExtract} disabled={aiLoading || !aiInput.trim()} className="gap-2">
+            {aiLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
+            {aiLoading ? 'Analizando…' : 'Extraer ficha'}
+          </Button>
+        </div>
+      </section>
+
+      {/* Formulario (manual o revisión de IA) */}
+      <form
+        ref={formRef}
+        onSubmit={handleCreateRace}
+        className={`bg-[#111827] border rounded-2xl p-6 space-y-4 scroll-mt-6 ${
+          form.source === 'ai' && !form.id ? 'border-orange-500/50' : 'border-white/10'
+        }`}
+      >
+        <div className="flex items-center justify-between">
+          <h2 className="text-base font-semibold text-white">
+            {form.id ? 'Editar carrera' : form.source === 'ai' ? 'Revisar ficha generada por IA' : 'Añadir carrera manualmente'}
+          </h2>
+          {(form.id || form.name) && (
+            <Button variant="ghost" size="sm" onClick={() => setForm(EMPTY_FORM)}>
+              Limpiar
+            </Button>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="name">Nombre de la competición *</Label>
+            <Input id="name" required value={form.name} onChange={set('name')} placeholder="Ej. Ultra Pirineu 2026" />
+          </div>
+
+          <div>
+            <Label htmlFor="discipline">Disciplina</Label>
+            <select id="discipline" value={form.discipline} onChange={set('discipline')} className={selectCls}>
+              <option value="Trail running">Trail running</option>
+              <option value="Asfalto">Asfalto</option>
+              <option value="Media maratón">Media maratón</option>
+              <option value="OCR / Obstáculos">OCR / Obstáculos</option>
+            </select>
+          </div>
+
+          <div>
+            <Label htmlFor="date">Fecha (primer día) *</Label>
+            <div className="grid grid-cols-2 gap-2">
+              <Input id="date" type="date" required value={form.date} onChange={set('date')} />
+              <Input
+                id="endDate"
+                type="date"
+                min={form.date || undefined}
+                value={form.endDate || ''}
+                onChange={set('endDate')}
+                aria-label="Último día (si dura varios días)"
+                title="Último día (si dura varios días)"
+              />
+            </div>
+            <p className="text-[10px] text-gray-500 mt-1">Segunda fecha solo si dura varios días (fin de semana, etapas…).</p>
+          </div>
+
+          <div>
+            <Label htmlFor="location">Ubicación</Label>
+            <Input id="location" value={form.location} onChange={set('location')} placeholder="Ej. Bagà, Berguedà" />
+          </div>
+
+          <div>
+            <Label htmlFor="distanceText">Distancias</Label>
+            <Input id="distanceText" value={form.distanceText} onChange={set('distanceText')} placeholder="Ej. 10 km / 21 km" />
+          </div>
+
+          <div>
+            <Label htmlFor="price">Precio (€)</Label>
+            <Input id="price" type="number" min="0" step="0.5" value={form.price} onChange={set('price')} placeholder="Ej. 45" />
+          </div>
+
+          <div>
+            <Label htmlFor="link">URL de Inscripción</Label>
+            <Input id="link" value={form.link} onChange={set('link')} placeholder="https://..." />
+          </div>
+
+          <div>
+            <Label htmlFor="image">URL de imagen</Label>
+            <Input id="image" value={form.image} onChange={set('image')} placeholder="https://..." />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 md:col-span-2">
+            <div>
+              <Label htmlFor="lat">Latitud</Label>
+              <Input id="lat" type="number" step="any" value={form.lat} onChange={set('lat')} placeholder="Auto" />
+            </div>
+            <div>
+              <Label htmlFor="lon">Longitud</Label>
+              <Input id="lon" type="number" step="any" value={form.lon} onChange={set('lon')} placeholder="Auto" />
+            </div>
           </div>
         </div>
-      )}
+
+        <div className="pt-2 flex justify-end">
+          <Button type="submit" className="flex items-center gap-2">
+            <Plus className="w-4 h-4" />
+            <span>{form.id ? 'Guardar cambios' : 'Guardar y publicar'}</span>
+          </Button>
+        </div>
+      </form>
+
+      {/* Lista de carreras */}
+      <div>
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-1">
+          <h2 className="text-lg font-semibold text-white">Carreras en catálogo ({races.length})</h2>
+          <Button variant="secondary" size="sm" className="gap-1.5" onClick={handleBulkCheck} disabled={!!bulk || !!checkingId}>
+            {bulk ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Globe className="w-3.5 h-3.5" />}
+            {bulk ? `Revisando webs ${bulk.done}/${bulk.total}…` : 'Revisar webs con IA (10)'}
+          </Button>
+        </div>
+        <p className="text-xs text-gray-500 mb-4">
+          {Object.entries(counts)
+            .map(([k, v]) => `${v} ${k}`)
+            .join(' · ')}
+        </p>
+        <div className="space-y-3">
+          {races.map((r) => (
+            <div key={r.id} className="flex items-center justify-between gap-3 p-4 bg-[#111827] border border-white/10 rounded-xl">
+              <button className="flex items-center gap-4 min-w-0 text-left cursor-pointer" onClick={() => handleEdit(r)} title="Editar">
+                <img
+                  src={r.image || FALLBACK_IMAGE}
+                  alt=""
+                  className="w-16 h-12 rounded-lg object-cover bg-gray-900 border border-white/5 shrink-0"
+                />
+                <div className="min-w-0">
+                  <h3 className="font-semibold text-white text-sm truncate">{r.name}</h3>
+                  <div className="flex flex-wrap gap-x-2 text-xs text-gray-400 mt-1">
+                    <span>{r.date}</span>
+                    <span>•</span>
+                    <span>{r.discipline}</span>
+                    {r.price != null && r.price !== '' && (
+                      <>
+                        <span>•</span>
+                        <span className="text-orange-400 font-medium">{r.price}€</span>
+                      </>
+                    )}
+                    <span>•</span>
+                    <span>{r.location}</span>
+                    {r.lat == null && <span className="text-yellow-500/80">• sin coordenadas</span>}
+                  </div>
+                  <div className="text-[11px] mt-0.5 truncate">
+                    {r.link && r.link !== '#' ? (
+                      <span className={r.webVerified ? 'text-emerald-400' : 'text-gray-500'}>
+                        {hostOf(r.link)}
+                        {r.webVerified ? ' · verificada con IA' : r.webCheckedAt ? ' · revisada' : ''}
+                      </span>
+                    ) : (
+                      <span className="text-yellow-500/80">sin web oficial</span>
+                    )}
+                  </div>
+                </div>
+              </button>
+
+              <div className="flex items-center gap-1 shrink-0">
+                <span className="hidden sm:inline text-[10px] uppercase tracking-wider text-gray-500 mr-2">{r.source || 'otros'}</span>
+                <button
+                  onClick={() => checkWeb(r).catch(() => {})}
+                  disabled={!!checkingId || !!bulk}
+                  className="p-2 text-gray-400 hover:text-orange-400 disabled:opacity-40 cursor-pointer"
+                  title="Buscar la web oficial actual con IA"
+                >
+                  {checkingId === r.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Globe className="w-4 h-4" />}
+                </button>
+                {r.link && r.link !== '#' && (
+                  <a href={r.link} target="_blank" rel="noreferrer" className="p-2 text-gray-400 hover:text-white">
+                    <ExternalLink className="w-4 h-4" />
+                  </a>
+                )}
+                <button onClick={() => deleteRace(r.id)} className="p-2 text-red-400 hover:text-red-300 cursor-pointer" title="Eliminar">
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

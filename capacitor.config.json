@@ -1,0 +1,8 @@
+{
+  "appId": "com.raceconnect.hub",
+  "appName": "Race Connect",
+  "webDir": "dist",
+  "backgroundColor": "#0B0F19",
+  "android": { "allowMixedContent": false },
+  "ios": { "contentInset": "never" }
+}

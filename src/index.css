@@ -1,29 +1,118 @@
 @import "tailwindcss";
 
-@layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --primary: 142.1 76.2% 36.3%;
-    --primary-foreground: 355.7 100% 97.3%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.5% 46.9%;
-    --border: 214.3 31.8% 91.4%;
-    --destructive: 0 84.2% 60.2%;
-  }
+:root {
+  color-scheme: dark;
+}
 
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --primary: 142.1 70.6% 45.3%;
-    --primary-foreground: 144.9 80.4% 10%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --border: 217.2 32.6% 17.5%;
-    --destructive: 0 62.8% 30.6%;
+html,
+body {
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+}
+
+body {
+  margin: 0;
+  background-color: #0b0f19;
+  color: #f3f4f6;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  min-height: 100vh;
+}
+
+/* ---- Mapa de carreras (Leaflet) ---- */
+.rc-marker {
+  width: 100%;
+  height: 100%;
+  border-radius: 9999px;
+  background: var(--c);
+  border: 2px solid #0b0f19;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--c) 45%, transparent), 0 2px 6px rgba(0, 0, 0, 0.5);
+  color: #fff;
+  font: 700 11px/24px system-ui, sans-serif;
+  text-align: center;
+}
+.leaflet-container.leaflet-container {
+  background: #0b0f19;
+  font-family: inherit;
+}
+.rc-popup .leaflet-popup-content-wrapper,
+.rc-popup .leaflet-popup-tip {
+  background: #111827;
+  color: #e5e7eb;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.rc-popup .leaflet-popup-content {
+  margin: 10px 12px;
+}
+.rc-popup a.leaflet-popup-close-button {
+  color: #9ca3af;
+}
+.rc-pop-title {
+  margin: 0 0 6px !important;
+  font-size: 11px;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.rc-pop-item {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  width: 100%;
+  text-align: left;
+  padding: 6px 4px;
+  border-radius: 8px;
+  background: none;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+}
+.rc-pop-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+.rc-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  margin-top: 5px;
+  flex-shrink: 0;
+}
+.rc-pop-text strong {
+  display: block;
+  font-size: 13px;
+  color: #fff;
+  line-height: 1.25;
+}
+.rc-pop-text small {
+  display: block;
+  font-size: 11px;
+  color: #9ca3af;
+  margin-top: 2px;
+}
+.rc-pop-more {
+  margin: 4px 0 0 !important;
+  font-size: 11px;
+  color: #6b7280;
+}
+.leaflet-control-zoom a {
+  background: #111827 !important;
+  color: #e5e7eb !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+.leaflet-control-attribution {
+  background: rgba(11, 15, 25, 0.7) !important;
+  color: #6b7280 !important;
+}
+.leaflet-control-attribution a {
+  color: #9ca3af !important;
+}
+.rc-flash {
+  animation: rc-flash 1.6s ease-out;
+}
+@keyframes rc-flash {
+  0%, 40% {
+    box-shadow: 0 0 0 3px #f97316;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
   }
 }

@@ -130,7 +130,7 @@ export async function setSessionFromRedirect(s) {
   return user;
 }
 
-async function getAccessToken() {
+export async function getAccessToken() {
   let s = readSession();
   if (!s) return null;
   if (s.expires_at - 60 < Date.now() / 1000) {

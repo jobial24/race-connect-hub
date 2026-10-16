@@ -33,6 +33,7 @@ import {
   applyWebFinding,
 } from '@/services/aiRaceService';
 import { lookupPreset } from '@/lib/places';
+import { getAccessToken } from '@/lib/supabase';
 
 const EMPTY_FORM = {
   id: '',
@@ -117,8 +118,24 @@ export default function AdminRaces() {
     setSyncing(true);
     setNotice(null);
     try {
-      const r = await importRunneaRaces({ force: true });
-      flash({ type: r.ok ? 'ok' : 'error', text: r.message, details: r.errors }, r.ok ? 6000 : 0);
+      if (server.online) {
+        const r = await importRunneaRaces({ force: true });
+        flash({ type: r.ok ? 'ok' : 'error', text: r.message, details: r.errors }, r.ok ? 6000 : 0);
+      } else {
+        // Web publicada: la función de Cloudflare lanza el workflow de GitHub
+        const token = await getAccessToken();
+        if (!token) throw new Error('Inicia sesión como administrador.');
+        const res = await fetch('/api/sync-races', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || `Error ${res.status}`);
+        flash(
+          { type: 'ok', text: 'Sincronización iniciada en GitHub. Tarda unos minutos; después recarga la página para ver las carreras nuevas.' },
+          12000
+        );
+      }
     } catch (err) {
       flash({ type: 'error', text: `Error al sincronizar: ${err.message}` }, 0);
     } finally {
@@ -311,20 +328,14 @@ export default function AdminRaces() {
               ? 'Comprobando backend local…'
               : server.online
               ? `Servidor activo · Asistente IA ${server.ai ? `conectado (${serverAi?.providerLabel || server.aiProvider})` : 'sin configurar'}`
-              : 'Backend local no disponible (arranca con npm run dev)'}
+              : 'Sincronización manual: se lanza en GitHub y tarda unos minutos'}
           </p>
         </div>
 
-        {server.online === true ? (
-          <Button onClick={handleSync} disabled={syncing} className="flex items-center gap-2 px-5">
-            <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
-            <span>{syncing ? 'Sincronizando…' : 'Sincronizar carreras'}</span>
-          </Button>
-        ) : (
-          <p className="text-xs text-gray-400 md:max-w-xs md:text-right">
-            Las carreras se actualizan automáticamente cada lunes desde GitHub.
-          </p>
-        )}
+        <Button onClick={handleSync} disabled={syncing} className="flex items-center gap-2 px-5">
+          <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
+          <span>{syncing ? 'Sincronizando…' : 'Sincronizar carreras'}</span>
+        </Button>
       </div>
 
       <Notice notice={notice} />

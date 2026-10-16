@@ -31,7 +31,9 @@ export default function Layout({ children }) {
   const location = useLocation();
   const user = useCloudUser();
   const isAdmin = useIsAdmin();
-  const visibleNav = NAV.filter((item) => item.path !== '/admin' || isAdmin === true);
+  const visibleNav = NAV.filter(
+    (item) => (item.path !== '/admin' || isAdmin === true) && (item.path !== '/my-races' || Boolean(user))
+  );
 
   return (
     <div className="flex h-[100dvh] w-full bg-[#0B0F19] text-gray-200 overflow-hidden font-sans">
@@ -108,7 +110,7 @@ export default function Layout({ children }) {
 
       {/* Móvil: barra de pestañas inferior, como una app nativa */}
       <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-[#0e1320]/95 backdrop-blur border-t border-white/10 pb-[env(safe-area-inset-bottom)]">
-        <div className="grid grid-cols-3">
+        <div className="grid" style={{ gridTemplateColumns: `repeat(${visibleNav.length}, minmax(0, 1fr))` }}>
           {visibleNav.map((item) => {
             const Icon = item.icon;
             const active = location.pathname === item.path;

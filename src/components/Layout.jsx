@@ -3,6 +3,7 @@ import { Trophy, Calendar, Shield, LogOut, User, Ticket } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import SignupPrompt from '@/components/SignupPrompt';
 import { useCloudUser } from '@/lib/useCloudUser';
+import { useIsAdmin } from '@/lib/useIsAdmin';
 import { cloudEnabled, displayName, signOut } from '@/lib/supabase';
 
 const NAV = [
@@ -29,6 +30,8 @@ export default function Layout({ children }) {
   const navigate = useNavigate();
   const location = useLocation();
   const user = useCloudUser();
+  const isAdmin = useIsAdmin();
+  const visibleNav = NAV.filter((item) => item.path !== '/admin' || isAdmin === true);
 
   return (
     <div className="flex h-[100dvh] w-full bg-[#0B0F19] text-gray-200 overflow-hidden font-sans">
@@ -39,7 +42,7 @@ export default function Layout({ children }) {
             <Logo />
           </div>
           <nav className="space-y-1.5">
-            {NAV.map((item) => {
+            {visibleNav.map((item) => {
               const Icon = item.icon;
               const active = location.pathname === item.path;
               return (
@@ -106,7 +109,7 @@ export default function Layout({ children }) {
       {/* Móvil: barra de pestañas inferior, como una app nativa */}
       <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-[#0e1320]/95 backdrop-blur border-t border-white/10 pb-[env(safe-area-inset-bottom)]">
         <div className="grid grid-cols-3">
-          {NAV.map((item) => {
+          {visibleNav.map((item) => {
             const Icon = item.icon;
             const active = location.pathname === item.path;
             return (

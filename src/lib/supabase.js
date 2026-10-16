@@ -101,7 +101,8 @@ export async function signOut() {
 }
 
 export async function sendPasswordReset(email) {
-  await authFetch('/recover', { email, redirect_to: `${location.origin}/reset-password` });
+  // redirect_to va en la URL (no en el cuerpo), igual que en el registro
+  await authFetch(`/recover?redirect_to=${encodeURIComponent(`${location.origin}/reset-password`)}`, { email });
 }
 
 export async function updatePassword(password, accessToken) {

@@ -315,10 +315,16 @@ export default function AdminRaces() {
           </p>
         </div>
 
-        <Button onClick={handleSync} disabled={syncing} className="flex items-center gap-2 px-5">
-          <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
-          <span>{syncing ? 'Sincronizando…' : 'Sincronizar carreras'}</span>
-        </Button>
+        {server.online === true ? (
+          <Button onClick={handleSync} disabled={syncing} className="flex items-center gap-2 px-5">
+            <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
+            <span>{syncing ? 'Sincronizando…' : 'Sincronizar carreras'}</span>
+          </Button>
+        ) : (
+          <p className="text-xs text-gray-400 md:max-w-xs md:text-right">
+            Las carreras se actualizan automáticamente cada lunes desde GitHub.
+          </p>
+        )}
       </div>
 
       <Notice notice={notice} />

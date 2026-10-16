@@ -363,7 +363,7 @@ export default function Home() {
             : 'No se pudo obtener tu ubicación: se usa la ciudad elegida en «Desde».';
         setGpsState({ loading: false, error: msg });
       },
-      { enableHighAccuracy: false, timeout: 10000, maximumAge: 10 * 60 * 1000 }
+      { enableHighAccuracy: false, timeout: 20000, maximumAge: 10 * 60 * 1000 }
     );
   };
 

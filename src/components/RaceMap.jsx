@@ -1,4 +1,5 @@
-// Mapa de carreras con Leaflet + teselas de OpenStreetMap (estilo oscuro de CARTO).
+// Mapa de carreras con Leaflet + teselas vectoriales de MapTiler (estilo oscuro, plan gratuito).
+// Requiere VITE_MAPTILER_KEY en .env.
 // Leaflet va incluido en public/vendor/leaflet y se carga solo la primera vez que
 // se abre el mapa (no hace falta instalar nada con npm y funciona en la app móvil).
 import React, { useEffect, useRef, useState } from 'react';
@@ -91,10 +92,12 @@ export default function RaceMap({ races, center, origin, boundsActive, onSearchA
       .then((L) => {
         if (cancelled || !el.current || map.current) return;
         const m = L.map(el.current, { zoomControl: true, attributionControl: true, worldCopyJump: true }).setView([41.6, 2.0], 8);
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        const MAPTILER_KEY = import.meta.env.VITE_MAPTILER_KEY;
+        L.tileLayer(`https://api.maptiler.com/maps/basic-v2-dark/{z}/{x}/{y}.png?key=${MAPTILER_KEY}`, {
           maxZoom: 18,
-          subdomains: 'abcd',
-          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
+          tileSize: 512,
+          zoomOffset: -1,
+          attribution: '&copy; <a href="https://www.maptiler.com/copyright/">MapTiler</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
         }).addTo(m);
         layer.current = L.layerGroup().addTo(m);
         m.on('moveend', () => {

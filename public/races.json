@@ -1,295 +1,6 @@
 {
-  "fetchedAt": 1793629846449,
+  "fetchedAt": 1794236077511,
   "races": [
-    {
-      "id": "xipgroc-6030",
-      "source": "xipgroc",
-      "name": "Cros Ciutat de Cerdanyola",
-      "date": "2026-11-07",
-      "discipline": "Trail running",
-      "location": "Cerdanyola",
-      "distanceText": "Open",
-      "inscriptions": [
-        {
-          "label": "Open",
-          "url": "https://xipgroc.cat/ca/curses/CrosCerdanyola2026/openf/inscripcio/fins-2008",
-          "open": true,
-          "adult": true
-        }
-      ],
-      "inscriptionsOpen": true,
-      "price": 5,
-      "image": "https://images.unsplash.com/photo-1452626038306-9aae5e071dd3?auto=format&fit=crop&w=800&q=80",
-      "officialUrl": "https://www.atcerdanyola.com/curses/crosCerdanyola/",
-      "registrationUrl": "https://xipgroc.cat/ca/curses/CrosCerdanyola2026/openf/inscripcio/fins-2008",
-      "link": "https://xipgroc.cat/ca/curses/CrosCerdanyola2026/openf/inscripcio/fins-2008",
-      "sourceUrl": "https://xipgroc.cat/ca/curses",
-      "locationGuessed": true,
-      "geoQuery": "Cerdanyola, Catalunya",
-      "lat": 41.4909972,
-      "lon": 2.1405506,
-      "admin": {
-        "state": "Cataluña",
-        "province": "Barcelona",
-        "county": "Vallés Occidental",
-        "countryCode": "ES"
-      }
-    },
-    {
-      "id": "xipgroc-6114",
-      "source": "xipgroc",
-      "name": "62è Cros Escolar de Cornellà de Llobregat",
-      "date": "2026-11-07",
-      "discipline": "Trail running",
-      "location": "Escolar de Cornellà de Llobregat",
-      "distanceText": "JuvMF / CadMF / InfM / InfF / A15MF / A16MF / B17MF / B18MF / PB19MF / PB20MF / EI21MF / Solidaria / EI2223MF",
-      "inscriptions": [
-        {
-          "label": "JuvMF",
-          "url": "",
-          "open": false,
-          "adult": true
-        },
-        {
-          "label": "CadMF",
-          "url": "",
-          "open": false,
-          "adult": true
-        },
-        {
-          "label": "InfM",
-          "url": "",
-          "open": false,
-          "adult": true
-        },
-        {
-          "label": "InfF",
-          "url": "",
-          "open": false,
-          "adult": true
-        },
-        {
-          "label": "A15MF",
-          "url": "",
-          "open": false,
-          "adult": true
-        },
-        {
-          "label": "A16MF",
-          "url": "",
-          "open": false,
-          "adult": true
-        },
-        {
-          "label": "B17MF",
-          "url": "",
-          "open": false,
-          "adult": true
-        },
-        {
-          "label": "B18MF",
-          "url": "",
-          "open": false,
-          "adult": true
-        },
-        {
-          "label": "PB19MF",
-          "url": "",
-          "open": false,
-          "adult": true
-        },
-        {
-          "label": "PB20MF",
-          "url": "",
-          "open": false,
-          "adult": true
-        },
-        {
-          "label": "EI21MF",
-          "url": "",
-          "open": false,
-          "adult": true
-        },
-        {
-          "label": "Solidaria",
-          "url": "",
-          "open": false,
-          "adult": true
-        },
-        {
-          "label": "EI2223MF",
-          "url": "",
-          "open": false,
-          "adult": true
-        }
-      ],
-      "inscriptionsOpen": false,
-      "price": null,
-      "image": "https://images.unsplash.com/photo-1452626038306-9aae5e071dd3?auto=format&fit=crop&w=800&q=80",
-      "officialUrl": "",
-      "registrationUrl": "",
-      "link": "",
-      "sourceUrl": "https://xipgroc.cat/ca/curses",
-      "locationGuessed": true,
-      "geoQuery": "Escolar de Cornellà de Llobregat, Catalunya"
-    },
-    {
-      "id": "xipgroc-6000",
-      "source": "xipgroc",
-      "name": "60 Cros de Granollers",
-      "date": "2026-11-08",
-      "discipline": "Trail running",
-      "location": "Granollers",
-      "distanceText": "",
-      "inscriptions": [
-        {
-          "label": "VetMF",
-          "url": "",
-          "open": false,
-          "adult": false
-        },
-        {
-          "label": "SB16F",
-          "url": "",
-          "open": false,
-          "adult": false
-        },
-        {
-          "label": "SB16M",
-          "url": "",
-          "open": false,
-          "adult": false
-        },
-        {
-          "label": "SB14F",
-          "url": "",
-          "open": false,
-          "adult": false
-        },
-        {
-          "label": "SB14M",
-          "url": "",
-          "open": false,
-          "adult": false
-        },
-        {
-          "label": "SB18F",
-          "url": "",
-          "open": false,
-          "adult": false
-        },
-        {
-          "label": "SB18M",
-          "url": "",
-          "open": false,
-          "adult": false
-        },
-        {
-          "label": "SB20F",
-          "url": "",
-          "open": false,
-          "adult": false
-        },
-        {
-          "label": "SB20M",
-          "url": "",
-          "open": false,
-          "adult": false
-        },
-        {
-          "label": "Sen/SB23F",
-          "url": "",
-          "open": false,
-          "adult": false
-        },
-        {
-          "label": "Sen/SB23M",
-          "url": "",
-          "open": false,
-          "adult": false
-        },
-        {
-          "label": "SB12F",
-          "url": "",
-          "open": false,
-          "adult": false
-        },
-        {
-          "label": "SB12M",
-          "url": "",
-          "open": false,
-          "adult": false
-        },
-        {
-          "label": "SB10F",
-          "url": "",
-          "open": false,
-          "adult": false
-        },
-        {
-          "label": "SB10M",
-          "url": "",
-          "open": false,
-          "adult": false
-        },
-        {
-          "label": "SB8MF",
-          "url": "",
-          "open": false,
-          "adult": false
-        }
-      ],
-      "inscriptionsOpen": false,
-      "price": null,
-      "image": "https://xipgroc.cat/races_images/CrosGranollers2024.jpg",
-      "officialUrl": "https://cagranollers.com/cros-internacional/",
-      "registrationUrl": "",
-      "link": "https://cagranollers.com/cros-internacional/",
-      "sourceUrl": "https://xipgroc.cat/ca/curses",
-      "geoQuery": "Granollers, Catalunya",
-      "lat": 41.6079,
-      "lon": 2.2876
-    },
-    {
-      "id": "xipgroc-6096",
-      "source": "xipgroc",
-      "name": "31a Marxa del Garraf",
-      "date": "2026-11-08",
-      "discipline": "Trail running",
-      "location": "Garraf",
-      "distanceText": "46K / 23K",
-      "inscriptions": [
-        {
-          "label": "46K",
-          "url": "https://inscripcio.feec.cat/inscripcion/31ena-marxa-del-garraf/inscripcion_federado_licPlay/",
-          "open": true,
-          "adult": true
-        },
-        {
-          "label": "23K",
-          "url": "https://inscripcio.feec.cat/inscripcion/31ena-marxa-del-garraf/inscripcion_federado_licPlay/",
-          "open": true,
-          "adult": true
-        }
-      ],
-      "inscriptionsOpen": true,
-      "price": null,
-      "image": "https://xipgroc.cat/races_images/MarxaGarraf2026.jpg",
-      "officialUrl": "https://www.umegava.cat/gcw/pub/gcu_activitats.php?nvop=op00616&nvfil=Activitats|/gcw/pub/gcu_activitats.php|",
-      "registrationUrl": "https://inscripcio.feec.cat/inscripcion/31ena-marxa-del-garraf/inscripcion_federado_licPlay/",
-      "link": "https://inscripcio.feec.cat/inscripcion/31ena-marxa-del-garraf/inscripcion_federado_licPlay/",
-      "sourceUrl": "https://xipgroc.cat/ca/curses",
-      "locationGuessed": true,
-      "geoQuery": "Garraf, Catalunya",
-      "lat": 41.2610462,
-      "lon": 1.804544,
-      "admin": {
-        "state": "Cataluña",
-        "province": "Barcelona",
-        "county": "Garraf",
-        "countryCode": "ES"
-      }
-    },
     {
       "id": "xipgroc-5496",
       "source": "xipgroc",
@@ -423,7 +134,7 @@
         }
       ],
       "inscriptionsOpen": true,
-      "price": 18,
+      "price": 20,
       "image": "https://xipgroc.cat/races_images/Oller2019.jpg",
       "officialUrl": "http://www.vinya-cross.es/",
       "registrationUrl": "https://xipgroc.cat/ca/curses/Oller2026/10k/inscripcio/sortida-10-30",
@@ -431,8 +142,8 @@
       "sourceUrl": "https://xipgroc.cat/ca/curses",
       "locationGuessed": true,
       "geoQuery": "Oller del Mas, Catalunya",
-      "lat": 41.7043216,
-      "lon": 1.8048266,
+      "lat": 41.7045507,
+      "lon": 1.8051212,
       "admin": {
         "state": "Cataluña",
         "province": "Barcelona",
@@ -494,7 +205,7 @@
         }
       ],
       "inscriptionsOpen": true,
-      "price": 13,
+      "price": 16,
       "image": "https://images.unsplash.com/photo-1452626038306-9aae5e071dd3?auto=format&fit=crop&w=800&q=80",
       "officialUrl": "http://www.els10delesfranqueses.cat/",
       "registrationUrl": "https://xipgroc.cat/ca/curses/LesFranqueses2026/10k/inscripcio/cursa",
@@ -597,13 +308,38 @@
       "locationUnknown": true
     },
     {
+      "id": "xipgroc-6129",
+      "source": "xipgroc",
+      "name": "X Marxa solidària anARIanant",
+      "date": "2026-11-21",
+      "discipline": "Asfalto",
+      "location": "Catalunya",
+      "distanceText": "8k",
+      "inscriptions": [
+        {
+          "label": "8k",
+          "url": "https://xipgroc.cat/ca/curses/AnARIanant2026/8k/inscripcio/projecte-ari-sense-xip",
+          "open": true,
+          "adult": true
+        }
+      ],
+      "inscriptionsOpen": true,
+      "price": 12,
+      "image": "https://xipgroc.cat/races_images/AnARIanant2025.jpg",
+      "officialUrl": "https://www.fundaciocollserola.cat/",
+      "registrationUrl": "https://xipgroc.cat/ca/curses/AnARIanant2026/8k/inscripcio/projecte-ari-sense-xip",
+      "link": "https://xipgroc.cat/ca/curses/AnARIanant2026/8k/inscripcio/projecte-ari-sense-xip",
+      "sourceUrl": "https://xipgroc.cat/ca/curses",
+      "locationUnknown": true
+    },
+    {
       "id": "xipgroc-6045",
       "source": "xipgroc",
       "name": "40a Pujada i Baixada a Guanta",
       "date": "2026-11-22",
       "discipline": "Trail running",
       "location": "Guanta",
-      "distanceText": "12,3K / 6K",
+      "distanceText": "12,3K / 6K / Menors",
       "inscriptions": [
         {
           "label": "12,3K",
@@ -614,6 +350,12 @@
         {
           "label": "6K",
           "url": "https://xipgroc.cat/ca/curses/Guanta2026/6k/inscripcio/iniciacio",
+          "open": true,
+          "adult": true
+        },
+        {
+          "label": "Menors",
+          "url": "https://xipgroc.cat/ca/curses/Guanta2026/menors/inscripcio/2014_2026",
           "open": true,
           "adult": true
         }
@@ -719,27 +461,33 @@
       "date": "2026-12-06",
       "discipline": "Asfalto",
       "location": "Barcelona",
-      "distanceText": "5k / Júnior",
+      "distanceText": "5k / Júnior / Cadires",
       "inscriptions": [
         {
           "label": "5k",
-          "url": "",
-          "open": false,
+          "url": "https://xipgroc.cat/ca/curses/SantAndreu2026/5k/inscripcio/2012_i_anteriors",
+          "open": true,
           "adult": true
         },
         {
           "label": "Júnior",
-          "url": "",
-          "open": false,
+          "url": "https://xipgroc.cat/ca/curses/SantAndreu2026/junior/inscripcio/2013_2015",
+          "open": true,
+          "adult": true
+        },
+        {
+          "label": "Cadires",
+          "url": "https://xipgroc.cat/ca/curses/SantAndreu2026/adaptada-cadires/inscripcio/600m",
+          "open": true,
           "adult": true
         }
       ],
-      "inscriptionsOpen": false,
-      "price": null,
-      "image": "https://images.unsplash.com/photo-1452626038306-9aae5e071dd3?auto=format&fit=crop&w=800&q=80",
+      "inscriptionsOpen": true,
+      "price": 13,
+      "image": "https://xipgroc.cat/races_images/SantAndreu2026.jpg",
       "officialUrl": "https://www.cnsantandreu.com/cursa-de-sant-andreu-2/",
-      "registrationUrl": "",
-      "link": "https://www.cnsantandreu.com/cursa-de-sant-andreu-2/",
+      "registrationUrl": "https://xipgroc.cat/ca/curses/SantAndreu2026/5k/inscripcio/2012_i_anteriors",
+      "link": "https://xipgroc.cat/ca/curses/SantAndreu2026/5k/inscripcio/2012_i_anteriors",
       "sourceUrl": "https://xipgroc.cat/ca/curses",
       "geoQuery": "Barcelona, Catalunya",
       "lat": 41.3851,
@@ -752,7 +500,7 @@
       "date": "2026-12-12",
       "discipline": "Asfalto",
       "location": "ENS MOU Cardedeu",
-      "distanceText": "10K / 5K",
+      "distanceText": "10K / 5K Caminada",
       "inscriptions": [
         {
           "label": "10K",
@@ -761,8 +509,8 @@
           "adult": true
         },
         {
-          "label": "5K",
-          "url": "https://xipgroc.cat/ca/curses/Viver2026/5k/inscripcio/caminada-sense-xip",
+          "label": "5K Caminada",
+          "url": "https://xipgroc.cat/ca/curses/Viver2026/5k/inscripcio/no-xip",
           "open": true,
           "adult": true
         }
@@ -770,7 +518,7 @@
       "inscriptionsOpen": true,
       "price": 25,
       "image": "https://xipgroc.cat/races_images/Viver2026.jpg",
-      "officialUrl": "",
+      "officialUrl": "https://ensmou.vivelloc.cat/",
       "registrationUrl": "https://xipgroc.cat/ca/curses/Viver2026/10k/inscripcio/run",
       "link": "https://xipgroc.cat/ca/curses/Viver2026/10k/inscripcio/run",
       "sourceUrl": "https://xipgroc.cat/ca/curses",
@@ -838,7 +586,7 @@
         }
       ],
       "inscriptionsOpen": true,
-      "price": 23,
+      "price": 26,
       "image": "https://xipgroc.cat/races_images/MitjaVilanova2022.jpg",
       "officialUrl": "http://www.mitjavilanova.com/",
       "registrationUrl": "https://xipgroc.cat/ca/curses/MitjaVilanova2026/21k/inscripcio/mitja",
@@ -886,8 +634,8 @@
       "sourceUrl": "https://xipgroc.cat/ca/curses",
       "locationGuessed": true,
       "geoQuery": "Sagrera, Catalunya",
-      "lat": 41.4229693,
-      "lon": 2.1867776,
+      "lat": 41.4204101,
+      "lon": 2.186811,
       "admin": {
         "state": "Cataluña",
         "province": "Barcelona",
@@ -920,6 +668,32 @@
       "sourceUrl": "https://xipgroc.cat/ca/curses",
       "locationGuessed": true,
       "geoQuery": "Nadal Bigues i Riells, Catalunya"
+    },
+    {
+      "id": "xipgroc-6123",
+      "source": "xipgroc",
+      "name": "La de Nadal: Santa Coloma de Gramenet",
+      "date": "2026-12-19",
+      "discipline": "Asfalto",
+      "location": "La de Nadal: Santa Coloma de Gramenet",
+      "distanceText": "5K",
+      "inscriptions": [
+        {
+          "label": "5K",
+          "url": "https://xipgroc.cat/ca/curses/Elfs2026/5k/inscripcio/20-00",
+          "open": true,
+          "adult": true
+        }
+      ],
+      "inscriptionsOpen": true,
+      "price": 5,
+      "image": "https://xipgroc.cat/races_images/Elfs2026.jpg",
+      "officialUrl": "https://esportsgramenet.cat/ladenadal",
+      "registrationUrl": "https://xipgroc.cat/ca/curses/Elfs2026/5k/inscripcio/20-00",
+      "link": "https://xipgroc.cat/ca/curses/Elfs2026/5k/inscripcio/20-00",
+      "sourceUrl": "https://xipgroc.cat/ca/curses",
+      "locationGuessed": true,
+      "geoQuery": "La de Nadal: Santa Coloma de Gramenet, Catalunya"
     },
     {
       "id": "xipgroc-5988",
@@ -1201,7 +975,7 @@
         }
       ],
       "inscriptionsOpen": true,
-      "price": 6,
+      "price": 9,
       "image": "https://xipgroc.cat/races_images/Reis2022.jpg",
       "officialUrl": "http://www.corresolidaris.org/cursadereis/",
       "registrationUrl": "https://xipgroc.cat/ca/curses/Reis2027/5k/inscripcio/cursa",
@@ -1219,35 +993,32 @@
       }
     },
     {
-      "id": "xipgroc-5967",
+      "id": "xipgroc-6120",
       "source": "xipgroc",
-      "name": "43a Mitja Marató de Sitges",
-      "date": "2027-01-10",
+      "name": "Mitja Marató de Sitges (Infantils)",
+      "date": "2027-01-09",
       "discipline": "Media maratón",
       "location": "Sitges",
-      "distanceText": "Mitja / 10k",
+      "distanceText": "Kids",
       "inscriptions": [
         {
-          "label": "Mitja",
-          "url": "https://xipgroc.cat/ca/curses/Sitges2027/mitja/inscripcio/sortida-10-00",
-          "open": true,
-          "adult": true
-        },
-        {
-          "label": "10k",
-          "url": "https://xipgroc.cat/ca/curses/Sitges2027/10k/inscripcio/sortida-9-00",
+          "label": "Kids",
+          "url": "https://xipgroc.cat/ca/curses/SitgesInfantils2027/kids/inscripcio/2011_2023",
           "open": true,
           "adult": true
         }
       ],
       "inscriptionsOpen": true,
-      "price": 23,
+      "price": 1.5,
       "image": "https://xipgroc.cat/races_images/Sitges2027.jpg",
-      "officialUrl": "https://www.zonavipevents.com/carreras/mitja-sitges/",
-      "registrationUrl": "https://xipgroc.cat/ca/curses/Sitges2027/mitja/inscripcio/sortida-10-00",
-      "link": "https://xipgroc.cat/ca/curses/Sitges2027/mitja/inscripcio/sortida-10-00",
+      "officialUrl": "https://www.zonavipevents.com/curses-escolars-mitja-sitges/",
+      "registrationUrl": "https://xipgroc.cat/ca/curses/SitgesInfantils2027/kids/inscripcio/2011_2023",
+      "link": "https://xipgroc.cat/ca/curses/SitgesInfantils2027/kids/inscripcio/2011_2023",
       "sourceUrl": "https://xipgroc.cat/ca/curses",
       "geoQuery": "Sitges, Catalunya",
+      "alsoIn": [
+        "xipgroc"
+      ],
       "lat": 41.2372,
       "lon": 1.8059
     },
@@ -1694,18 +1465,51 @@
       "inscriptions": [
         {
           "label": "10K",
-          "url": "",
-          "open": false,
+          "url": "https://xipgroc.cat/ca/curses/mossos2027/10k/inscripcio/llarga",
+          "open": true,
           "adult": true
         },
         {
           "label": "5K",
+          "url": "https://xipgroc.cat/ca/curses/mossos2027/5k/inscripcio/curta",
+          "open": true,
+          "adult": true
+        },
+        {
+          "label": "Caminada",
+          "url": "https://xipgroc.cat/ca/curses/mossos2027/caminada/inscripcio/no-xip",
+          "open": true,
+          "adult": true
+        }
+      ],
+      "inscriptionsOpen": true,
+      "price": 14,
+      "image": "https://xipgroc.cat/races_images/mossos2027.jpg",
+      "officialUrl": "https://www.cursamossos.cat/",
+      "registrationUrl": "https://xipgroc.cat/ca/curses/mossos2027/10k/inscripcio/llarga",
+      "link": "https://xipgroc.cat/ca/curses/mossos2027/10k/inscripcio/llarga",
+      "sourceUrl": "https://xipgroc.cat/ca/curses",
+      "geoQuery": "Badalona, Catalunya",
+      "lat": 41.45,
+      "lon": 2.2474
+    },
+    {
+      "id": "xipgroc-6126",
+      "source": "xipgroc",
+      "name": "Cursa Medijocs",
+      "date": "2027-04-17",
+      "discipline": "Trail running",
+      "location": "Medijocs",
+      "distanceText": "7K / Inf 1K",
+      "inscriptions": [
+        {
+          "label": "7K",
           "url": "",
           "open": false,
           "adult": true
         },
         {
-          "label": "Caminada",
+          "label": "Inf 1K",
           "url": "",
           "open": false,
           "adult": true
@@ -1713,14 +1517,13 @@
       ],
       "inscriptionsOpen": false,
       "price": null,
-      "image": "https://xipgroc.cat/races_images/mossos2027.jpg",
-      "officialUrl": "https://www.cursamossos.cat/",
+      "image": "https://xipgroc.cat/races_images/Medijocs2023.jpg",
+      "officialUrl": "https://medijocs.comb.cat/cursaatletica.htm",
       "registrationUrl": "",
-      "link": "https://www.cursamossos.cat/",
+      "link": "https://medijocs.comb.cat/cursaatletica.htm",
       "sourceUrl": "https://xipgroc.cat/ca/curses",
-      "geoQuery": "Badalona, Catalunya",
-      "lat": 41.45,
-      "lon": 2.2474
+      "locationGuessed": true,
+      "geoQuery": "Medijocs, Catalunya"
     },
     {
       "id": "xipgroc-5991",
@@ -2170,6 +1973,40 @@
       "link": "https://es.spartan.com/es/race/detail/11173/overview"
     },
     {
+      "id": "spartan-11659",
+      "source": "spartan",
+      "name": "DEKA BARCELONA 2027 OTOÑO",
+      "brand": "DEKA",
+      "date": "2027-09-25",
+      "endDate": "2027-09-26",
+      "discipline": "OCR / Obstáculos",
+      "location": "Barcelona (Cataluña)",
+      "country": "ES",
+      "lat": 41.4000657,
+      "lon": 2.20920731,
+      "distanceText": "DEKA MILE / DEKA FIT",
+      "inscriptions": [
+        {
+          "label": "DEKA MILE",
+          "url": "https://es.spartan.com/es/race/detail/11659/overview",
+          "open": true,
+          "adult": true
+        },
+        {
+          "label": "DEKA FIT",
+          "url": "https://es.spartan.com/es/race/detail/11659/overview",
+          "open": true,
+          "adult": true
+        }
+      ],
+      "inscriptionsOpen": true,
+      "price": null,
+      "image": "https://d2fgrv8oeaq2or.cloudfront.net/picture/file/24250/v_676_380_original.jpg",
+      "officialUrl": "https://es.spartan.com/es/race/detail/11659/overview",
+      "registrationUrl": "https://es.spartan.com/es/race/detail/11659/overview",
+      "link": "https://es.spartan.com/es/race/detail/11659/overview"
+    },
+    {
       "id": "spartan-10950",
       "source": "spartan",
       "name": "DEKA BARCELONA 2027 PRIMAVERA",
@@ -2208,40 +2045,6 @@
       "officialUrl": "https://es.spartan.com/es/race/detail/10950/overview",
       "registrationUrl": "https://es.spartan.com/es/race/detail/10950/overview",
       "link": "https://es.spartan.com/es/race/detail/10950/overview"
-    },
-    {
-      "id": "spartan-11659",
-      "source": "spartan",
-      "name": "DEKA BARCELONA 2027 OTOÑO",
-      "brand": "DEKA",
-      "date": "2027-09-25",
-      "endDate": "2027-09-26",
-      "discipline": "OCR / Obstáculos",
-      "location": "Barcelona (Cataluña)",
-      "country": "ES",
-      "lat": 41.4000657,
-      "lon": 2.20920731,
-      "distanceText": "DEKA MILE / DEKA FIT",
-      "inscriptions": [
-        {
-          "label": "DEKA MILE",
-          "url": "https://es.spartan.com/es/race/detail/11659/overview",
-          "open": true,
-          "adult": true
-        },
-        {
-          "label": "DEKA FIT",
-          "url": "https://es.spartan.com/es/race/detail/11659/overview",
-          "open": true,
-          "adult": true
-        }
-      ],
-      "inscriptionsOpen": true,
-      "price": null,
-      "image": "https://d2fgrv8oeaq2or.cloudfront.net/picture/file/24250/v_676_380_original.jpg",
-      "officialUrl": "https://es.spartan.com/es/race/detail/11659/overview",
-      "registrationUrl": "https://es.spartan.com/es/race/detail/11659/overview",
-      "link": "https://es.spartan.com/es/race/detail/11659/overview"
     },
     {
       "id": "spartan-11731",
@@ -2310,131 +2113,24 @@
       }
     },
     {
-      "id": "runnea-marato-dels-dements",
+      "id": "runnea-herri-krosa-bilbao",
       "source": "runnea",
-      "name": "Marató dels Dements 2026",
-      "date": "2026-11-07",
+      "name": "Herri Krosa Bilbao 2026",
+      "date": "2026-11-15",
       "discipline": "Asfalto",
-      "location": "Eslida (Castellon)",
-      "distanceText": "42,5 km / 22,5 km",
+      "location": "Bilbao (Vizcaya)",
+      "distanceText": "10  km",
       "price": null,
-      "image": "https://static.runnea.com/images/202406/marato-dels-dements-2024-cartel-250x250x80.jpg?1",
-      "sourceUrl": "https://www.runnea.com/carreras-populares/marato-dels-dements/",
-      "link": "https://www.maratodelsdements.com/",
-      "officialUrl": "https://www.maratodelsdements.com/",
-      "registrationUrl": "",
-      "startTime": "07:30",
-      "organizer": "Club de Muntanya Dements, Ajuntament Eslida y Ajuntament Aín",
-      "country": "espana",
-      "lat": 39.8794321,
-      "lon": -0.3079326,
-      "admin": {
-        "state": "Comunidad Valenciana",
-        "province": "Castellón",
-        "county": "La Plana Baixa",
-        "countryCode": "ES"
-      }
-    },
-    {
-      "id": "runnea-gran-carrera-del-mediterraneo",
-      "source": "runnea",
-      "name": "Gran Carrera del Mediterraneo 2026",
-      "date": "2026-11-08",
-      "discipline": "Media maratón",
-      "location": "Alicante",
-      "distanceText": "21 km",
-      "price": null,
-      "image": "https://static.runnea.com/images/202605/mediterraneo-logo-250x250x80.jpg?1",
-      "sourceUrl": "https://www.runnea.com/carreras-populares/gran-carrera-del-mediterraneo/",
-      "link": "https://www.lagrancarreradelmediterraneo.es/",
-      "officialUrl": "https://www.lagrancarreradelmediterraneo.es/",
-      "registrationUrl": "",
-      "startTime": "09:00",
-      "organizer": "Club Atlético Montemar",
-      "country": "espana",
-      "lat": 38.3436365,
-      "lon": -0.4881708,
-      "admin": {
-        "state": "Comunidad Valenciana",
-        "province": "Alicante",
-        "county": "L'Alacantí",
-        "countryCode": "ES"
-      }
-    },
-    {
-      "id": "runnea-media-maraton-cadiz",
-      "source": "runnea",
-      "name": "Media Maratón Ciudad de Cádiz 2026",
-      "date": "2026-11-08",
-      "discipline": "Media maratón",
-      "location": "Cádiz (Cadiz)",
-      "distanceText": "21 km",
-      "price": null,
-      "image": "https://static.runnea.com/images/202504/media-maraton-ciudad-cadiz-2025-cartel-250x250x80.jpg?1",
-      "sourceUrl": "https://www.runnea.com/carreras-populares/media-maraton-cadiz/",
-      "link": "https://mediamaratonciudaddecadiz.com/",
-      "officialUrl": "https://mediamaratonciudaddecadiz.com/",
+      "image": "https://static.runnea.com/images/202605/herrikrosa-logo2026-250x250x80.jpg?1",
+      "sourceUrl": "https://www.runnea.com/carreras-populares/herri-krosa-bilbao/",
+      "link": "https://www.herrikrosa.es/",
+      "officialUrl": "https://www.herrikrosa.es/",
       "registrationUrl": "",
       "startTime": "",
-      "organizer": "Asociación Gaditana Yo me uno al Retto y Cronofinisher",
+      "organizer": "Ayuntamiento de Bilbao",
       "country": "espana",
-      "alsoIn": [
-        "runnea"
-      ],
-      "lat": 36.5297438,
-      "lon": -6.2928976,
-      "admin": {
-        "state": "Andalucía",
-        "province": "Cádiz",
-        "county": "Bahía de Cádiz",
-        "countryCode": "ES"
-      }
-    },
-    {
-      "id": "runnea-behobia-san-sebastian",
-      "source": "runnea",
-      "name": "Behobia San Sebastián 2026",
-      "date": "2026-11-08",
-      "discipline": "Asfalto",
-      "location": "Donostia (Guipuzcoa)",
-      "distanceText": "20 km",
-      "price": null,
-      "image": "https://static.runnea.com/images/202402/behobia-ss-2024-cartel-250x250x80.jpg?1",
-      "sourceUrl": "https://www.runnea.com/carreras-populares/behobia-san-sebastian/",
-      "link": "https://www.behobia-sansebastian.com/",
-      "officialUrl": "https://www.behobia-sansebastian.com/",
-      "registrationUrl": "",
-      "startTime": "",
-      "organizer": "CD. FORTUNA KE",
-      "country": "espana",
-      "lat": 43.3224219,
-      "lon": -1.9838889,
-      "admin": {
-        "state": "País Vasco",
-        "province": "Guipúzcoa",
-        "county": "",
-        "countryCode": "ES"
-      }
-    },
-    {
-      "id": "runnea-cursa-bombers",
-      "source": "runnea",
-      "name": "Cursa Bombers 2026",
-      "date": "2026-11-08",
-      "discipline": "Asfalto",
-      "location": "Barcelona",
-      "distanceText": "10 km",
-      "price": null,
-      "image": "https://static.runnea.com/images/202609/bombers-logo-250x250x80.jpg?1",
-      "sourceUrl": "https://www.runnea.com/carreras-populares/cursa-bombers/",
-      "link": "https://cursadebombers.barcelona/es/",
-      "officialUrl": "https://cursadebombers.barcelona/es/",
-      "registrationUrl": "",
-      "startTime": "08:50",
-      "organizer": "Ayuntamiento de Barcelona",
-      "country": "espana",
-      "lat": 41.3851,
-      "lon": 2.1734
+      "lat": 43.263,
+      "lon": -2.935
     },
     {
       "id": "runnea-media-maraton-tenerife",
@@ -2464,26 +2160,6 @@
         "county": "",
         "countryCode": "ES"
       }
-    },
-    {
-      "id": "runnea-herri-krosa-bilbao",
-      "source": "runnea",
-      "name": "Herri Krosa Bilbao 2026",
-      "date": "2026-11-15",
-      "discipline": "Asfalto",
-      "location": "Bilbao (Vizcaya)",
-      "distanceText": "10  km",
-      "price": null,
-      "image": "https://static.runnea.com/images/202605/herrikrosa-logo2026-250x250x80.jpg?1",
-      "sourceUrl": "https://www.runnea.com/carreras-populares/herri-krosa-bilbao/",
-      "link": "https://www.herrikrosa.es/",
-      "officialUrl": "https://www.herrikrosa.es/",
-      "registrationUrl": "",
-      "startTime": "",
-      "organizer": "Ayuntamiento de Bilbao",
-      "country": "espana",
-      "lat": 43.263,
-      "lon": -2.935
     },
     {
       "id": "runnea-maraton-de-donosti",
@@ -2604,48 +2280,120 @@
       "lon": -0.3763
     },
     {
-      "id": "runnea-san-silvestre-sevillana",
+      "id": "runnea-san-silvestre-salmantina",
       "source": "runnea",
-      "name": "San Silvestre Sevillana 2026",
+      "name": "San Silvestre Salmantina 2026",
       "date": "2026-12-27",
       "discipline": "Asfalto",
-      "location": "Sevilla",
-      "distanceText": "5 km",
+      "location": "Salamanca",
+      "distanceText": "10K",
       "price": null,
-      "image": "https://static.runnea.com/images/202511/logo-sevilla-250x250x80.jpg?1",
-      "sourceUrl": "https://www.runnea.com/carreras-populares/san-silvestre-sevillana/",
-      "link": "https://https://www.sansilvestresevillana.com/",
-      "officialUrl": "https://https://www.sansilvestresevillana.com/",
+      "image": "https://static.runnea.com/images/202607/salamanca-logo-250x250x80.jpg?1",
+      "sourceUrl": "https://www.runnea.com/carreras-populares/san-silvestre-salmantina/",
+      "link": "http://www.sansilvestresalmantina.com/",
+      "officialUrl": "http://www.sansilvestresalmantina.com/",
       "registrationUrl": "",
-      "startTime": "17:00",
-      "organizer": "Agrupación de Deportistas de Sevilla",
+      "startTime": "12:30",
+      "organizer": "Club Deportivo Padre Basabe",
       "country": "espana",
       "alsoIn": [
         "runnea"
       ],
-      "lat": 37.3891,
-      "lon": -5.9845
+      "lat": 40.9651572,
+      "lon": -5.6640182,
+      "admin": {
+        "state": "Castilla y León",
+        "province": "Salamanca",
+        "county": "",
+        "countryCode": "ES"
+      }
     },
     {
-      "id": "runnea-san-silvestre-vallecana",
+      "id": "runnea-san-silvestre-bilbao-rekalde",
       "source": "runnea",
-      "name": "San Silvestre Vallecana 2026",
+      "name": "San Silvestre Bilbao Rekalde 2026",
       "date": "2026-12-31",
       "discipline": "Asfalto",
-      "location": "Madrid",
-      "distanceText": "10",
+      "location": "Bilbao (Vizcaya)",
+      "distanceText": "6,6 km",
       "price": null,
-      "image": "https://static.runnea.com/images/202606/san-silvestre-vallecana-2026-logo-250x250x80.jpg?1",
-      "sourceUrl": "https://www.runnea.com/carreras-populares/san-silvestre-vallecana/",
-      "link": "https://www.sansilvestrevallecana.com/",
-      "officialUrl": "https://www.sansilvestrevallecana.com/",
+      "image": "https://static.runnea.com/images/202610/bilbao-logo-250x250x80.jpg?1",
+      "sourceUrl": "https://www.runnea.com/carreras-populares/san-silvestre-bilbao-rekalde/",
+      "link": "https://sansilvestrebilbao.com/",
+      "officialUrl": "https://sansilvestrebilbao.com/",
       "registrationUrl": "",
-      "startTime": "",
-      "organizer": "Last Lap",
+      "startTime": "16:30",
+      "organizer": "Sociedad Deportiva Korrikazaleak",
       "country": "espana",
       "alsoIn": [
         "runnea"
       ],
+      "lat": 43.263,
+      "lon": -2.935
+    },
+    {
+      "id": "runnea-10k-valencia-ibercaja",
+      "source": "runnea",
+      "name": "10k Valencia 2027",
+      "date": "2027-01-10",
+      "discipline": "Asfalto",
+      "location": "Valencia",
+      "distanceText": "10 km",
+      "price": null,
+      "image": "https://static.runnea.com/images/202606/valencia-logo-250x250x80.jpg?1",
+      "sourceUrl": "https://www.runnea.com/carreras-populares/10k-valencia-ibercaja/",
+      "link": "https://10kvalencia.com/",
+      "officialUrl": "https://10kvalencia.com/",
+      "registrationUrl": "",
+      "startTime": "09:30",
+      "organizer": "Club de Atletismo 10k Valencia",
+      "country": "espana",
+      "lat": 39.4699,
+      "lon": -0.3763
+    },
+    {
+      "id": "runnea-mitja-marato-santa-pola",
+      "source": "runnea",
+      "name": "Mitja Marató Santa Pola 2027 Media Maratón",
+      "date": "2027-01-24",
+      "discipline": "Media maratón",
+      "location": "Santa Pola (Alicante)",
+      "distanceText": "21 km",
+      "price": null,
+      "image": "https://static.runnea.com/images/202310/media-maraton-santa-pola-2024-cartel-250x250x80.jpg?1",
+      "sourceUrl": "https://www.runnea.com/carreras-populares/mitja-marato-santa-pola/",
+      "link": "https://mitjasantapola.com",
+      "officialUrl": "https://mitjasantapola.com",
+      "registrationUrl": "",
+      "startTime": "",
+      "organizer": "Club Atletismo Santa Pola",
+      "country": "espana",
+      "lat": 38.1923641,
+      "lon": -0.5555464,
+      "admin": {
+        "state": "Comunidad Valenciana",
+        "province": "Alicante",
+        "county": "",
+        "countryCode": "ES"
+      }
+    },
+    {
+      "id": "runnea-media-maraton-getafe",
+      "source": "runnea",
+      "name": "Media Maratón Getafe 2027",
+      "date": "2027-01-31",
+      "discipline": "Media maratón",
+      "location": "Getafe (Madrid)",
+      "distanceText": "21 km",
+      "price": null,
+      "image": "https://static.runnea.com/images/202607/getafe-logo-250x250x80.jpg?1",
+      "sourceUrl": "https://www.runnea.com/carreras-populares/media-maraton-getafe/",
+      "link": "https://mediadegetafe.com/es",
+      "officialUrl": "https://mediadegetafe.com/es",
+      "registrationUrl": "",
+      "startTime": "10:30",
+      "organizer": "Club de Atletismo Artyneon",
+      "country": "espana",
       "lat": 40.4168,
       "lon": -3.7038
     },

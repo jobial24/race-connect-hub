@@ -16,15 +16,46 @@ async function hashPassword(password) {
     .join('');
 }
 
+async function ensureAuthTables(db) {
+  await db.batch([
+    db.prepare(`
+      CREATE TABLE IF NOT EXISTS users (
+        id TEXT PRIMARY KEY,
+        username TEXT NOT NULL,
+        email TEXT UNIQUE NOT NULL,
+        password_hash TEXT NOT NULL,
+        role TEXT DEFAULT 'user',
+        strava_athlete_id TEXT,
+        strava_username TEXT,
+        strava_avatar TEXT,
+        strava_access_token TEXT,
+        strava_refresh_token TEXT,
+        strava_expires_at INTEGER,
+        created_at TEXT DEFAULT (datetime('now'))
+      )
+    `),
+    db.prepare(`
+      CREATE TABLE IF NOT EXISTS user_registrations (
+        user_id TEXT NOT NULL,
+        race_id TEXT NOT NULL,
+        bib_number TEXT DEFAULT 'S/D',
+        target_time TEXT DEFAULT '--:--',
+        created_at TEXT DEFAULT (datetime('now')),
+        PRIMARY KEY (user_id, race_id)
+      )
+    `)
+  ]);
+}
+
 export async function onRequestOptions() {
   return new Response(null, { status: 204, headers: corsHeaders });
 }
 
-// GET /api/auth?userId=xxx -> Devuelve las carreras a las que está inscrito ese usuario
 export async function onRequestGet({ request, env }) {
   if (!env.DB) {
     return new Response(JSON.stringify({ ok: false, error: 'Falta binding DB' }), { status: 500, headers: corsHeaders });
   }
+  await ensureAuthTables(env.DB);
   const url = new URL(request.url);
   const userId = url.searchParams.get('userId');
   if (!userId) {
@@ -38,7 +69,6 @@ export async function onRequestGet({ request, env }) {
   return new Response(JSON.stringify({ ok: true, registrations: results || [] }), { status: 200, headers: corsHeaders });
 }
 
-// POST /api/auth -> Login, Registro o Apuntarse/Desapuntarse de una carrera
 export async function onRequestPost({ request, env }) {
   if (!env.DB) {
     return new Response(JSON.stringify({ ok: false, error: 'Binding DB no configurado en Cloudflare' }), {
@@ -48,10 +78,10 @@ export async function onRequestPost({ request, env }) {
   }
 
   try {
+    await ensureAuthTables(env.DB);
     const body = await request.json();
     const { action } = body;
 
-    // 1. Apuntarse / Desapuntarse de una carrera (guardado por usuario en D1)
     if (action === 'toggle_race') {
       const { userId, raceId, bib, targetTime } = body;
       const existing = await env.DB.prepare(
@@ -75,7 +105,6 @@ export async function onRequestPost({ request, env }) {
       return new Response(JSON.stringify({ ok: true, registrations: results || [] }), { status: 200, headers: corsHeaders });
     }
 
-    // 2. Registro de cuenta nueva
     const cleanEmail = (body.email || '').toLowerCase().trim();
     const cleanUser = (body.username || cleanEmail.split('@')[0]).trim();
     const passHash = await hashPassword(body.password || '');
@@ -104,7 +133,6 @@ export async function onRequestPost({ request, env }) {
       );
     }
 
-    // 3. Login de cuenta existente
     const user = await env.DB.prepare(
       `SELECT id, username, email, password_hash, role, strava_athlete_id, strava_username, strava_avatar FROM users WHERE email = ?1`
     ).bind(cleanEmail).first();

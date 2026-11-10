@@ -1,6 +1,4 @@
 // functions/api/sync-races.js
-// Cloudflare Pages Function + D1 SQLite (env.DB) + Control de Admin
-
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
@@ -8,30 +6,22 @@ const corsHeaders = {
   'Content-Type': 'application/json;charset=UTF-8',
 };
 
-// Lista blanca de cuentas Administradoras
-const ADMIN_ACCOUNTS = [
-  'joel.botana@gmail.com',
-  'jobial24'
-];
+const ADMIN_ACCOUNTS = ['joel.botana@gmail.com', 'jobial24'];
 
-// Verifica si la petición viene del Admin (Joel) o del Cron automático
 function verifyAdminAccess(request, env, body = {}) {
   const authHeader = request.headers.get('Authorization') || '';
   const headerEmail = (request.headers.get('X-Admin-Email') || '').toLowerCase().trim();
   const headerUser = (request.headers.get('X-Admin-User') || '').toLowerCase().trim();
   const bodyAdmin = (body.adminEmail || body.adminUser || '').toLowerCase().trim();
 
-  // 1. Verificar si es la cuenta de Joel por cabecera o body
   const isJoelAdmin =
     ADMIN_ACCOUNTS.includes(headerEmail) ||
     ADMIN_ACCOUNTS.includes(headerUser) ||
     ADMIN_ACCOUNTS.includes(bodyAdmin);
 
-  // 2. Verificar si viene con el token secreto (GitHub Actions / Cron)
   const hasValidSecret =
     env.SYNC_SECRET && authHeader === `Bearer ${env.SYNC_SECRET}`;
 
-  // 3. Si es una sincronización estándar automática y no hay SYNC_SECRET forzado en Cloudflare
   const isDefaultAutoCron = !env.SYNC_SECRET && (!body.action || body.action === 'sync');
 
   return {
@@ -41,7 +31,6 @@ function verifyAdminAccess(request, env, body = {}) {
   };
 }
 
-// Catálogo base + autodescubrimiento de carreras 2026 / 2027
 async function discoverUpcomingRaces() {
   return [
     {
@@ -175,12 +164,10 @@ async function discoverUpcomingRaces() {
   ];
 }
 
-// Preflight CORS
 export async function onRequestOptions() {
   return new Response(null, { status: 204, headers: corsHeaders });
 }
 
-// GET /api/sync-races -> Devuelve todas las carreras, logs y comprueba si el usuario es Admin
 export async function onRequestGet(context) {
   const { request, env } = context;
 
@@ -196,10 +183,7 @@ export async function onRequestGet(context) {
     const queryUser = (url.searchParams.get('user') || url.searchParams.get('email') || '').toLowerCase().trim();
     const authInfo = verifyAdminAccess(request, env, { adminEmail: queryUser });
 
-    // Si la tabla está vacía en la primera carga, la poblamos sola (Zero-Touch Init)
-    let { results: races } = await env.DB.prepare(
-      `SELECT * FROM races ORDER BY date ASC`
-    ).all();
+    let { results: races } = await env.DB.prepare(`SELECT * FROM races ORDER BY date ASC`).all();
 
     if (!races || races.length === 0) {
       const initialRaces = await discoverUpcomingRaces();
@@ -208,7 +192,7 @@ export async function onRequestGet(context) {
           id, name, date, location, province, country, discipline,
           distance_km, elevation_m, price_eur, status,
           website_url, image_url, source, updated_at
-        ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, datetime('now'))
+        ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, datetime('now'))
       `);
 
       await env.DB.batch(
@@ -221,8 +205,8 @@ export async function onRequestGet(context) {
         )
       );
 
-      constseeded = await env.DB.prepare(`SELECT * FROM races ORDER BY date ASC`).all();
-      races = constseeded.results;
+      const seeded = await env.DB.prepare(`SELECT * FROM races ORDER BY date ASC`).all();
+      races = seeded.results;
     }
 
     const lastSync = await env.DB.prepare(
@@ -248,7 +232,6 @@ export async function onRequestGet(context) {
   }
 }
 
-// POST /api/sync-races -> Sincroniza catálogo o añade/edita carreras como Admin (Joel)
 export async function onRequestPost(context) {
   const { request, env } = context;
 
@@ -269,18 +252,13 @@ export async function onRequestPost(context) {
   const auth = verifyAdminAccess(request, env, body);
   if (!auth.isAuthorized) {
     return new Response(
-      JSON.stringify({
-        ok: false,
-        error: 'Acceso denegado: Se requiere cuenta de administrador (joel.botana@gmail.com / jobial24).'
-      }),
+      JSON.stringify({ ok: false, error: 'Acceso denegado: Se requiere cuenta Admin (joel.botana@gmail.com / jobial24).' }),
       { status: 403, headers: corsHeaders }
     );
   }
 
   try {
     let racesToSync = [];
-
-    // Si el Admin envía una carrera individual o una lista personalizada
     if (body.race && typeof body.race === 'object') {
       racesToSync = [body.race];
     } else if (Array.isArray(body.races) && body.races.length > 0) {
@@ -294,7 +272,7 @@ export async function onRequestPost(context) {
         id, name, date, location, province, country, discipline,
         distance_km, elevation_m, price_eur, status,
         website_url, image_url, source, updated_at
-      ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, datetime('now'))
+      ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, datetime('now'))
       ON CONFLICT(id) DO UPDATE SET
         name = excluded.name,
         date = excluded.date,
@@ -315,9 +293,7 @@ export async function onRequestPost(context) {
     const batchOperations = racesToSync.map((r) => {
       const generatedId =
         r.id ||
-        `${String(r.name || 'race')
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, '-')}-${String(r.date || '2026').slice(0, 4)}`;
+        `${String(r.name || 'race').toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${String(r.date || '2026').slice(0, 4)}`;
 
       return upsertStmt.bind(
         generatedId,
@@ -337,14 +313,10 @@ export async function onRequestPost(context) {
       );
     });
 
-    // Guardar registro en sync_logs y mantener solo los últimos 50 registros
     batchOperations.push(
       env.DB.prepare(
         `INSERT INTO sync_logs (races_upserted, status, details) VALUES (?1, 'SUCCESS', ?2)`
-      ).bind(
-        racesToSync.length,
-        `[${auth.adminIdentifier}] Sincronizadas ${racesToSync.length} carreras en Cloudflare D1`
-      ),
+      ).bind(racesToSync.length, `[${auth.adminIdentifier}] Sincronizadas ${racesToSync.length} carreras en D1`),
       env.DB.prepare(
         `DELETE FROM sync_logs WHERE id NOT IN (SELECT id FROM sync_logs ORDER BY id DESC LIMIT 50)`
       )
@@ -357,8 +329,7 @@ export async function onRequestPost(context) {
         ok: true,
         admin: auth.adminIdentifier,
         upserted: racesToSync.length,
-        timestamp: new Date().toISOString(),
-        message: 'Catálogo actualizado correctamente en Cloudflare D1'
+        timestamp: new Date().toISOString()
       }),
       { status: 200, headers: corsHeaders }
     );
@@ -370,66 +341,30 @@ export async function onRequestPost(context) {
   }
 }
 
-// DELETE /api/sync-races?id=xxx -> Exclusivo para Admin (joel.botana@gmail.com / jobial24)
 export async function onRequestDelete(context) {
   const { request, env } = context;
-
   if (!env.DB) {
-    return new Response(
-      JSON.stringify({ ok: false, error: 'Binding D1 (env.DB) no configurado.' }),
-      { status: 500, headers: corsHeaders }
-    );
+    return new Response(JSON.stringify({ ok: false, error: 'Binding D1 no configurado.' }), { status: 500, headers: corsHeaders });
   }
 
   let body = {};
-  try {
-    body = await request.json();
-  } catch (_) {
-    body = {};
-  }
+  try { body = await request.json(); } catch (_) {}
 
   const auth = verifyAdminAccess(request, env, body);
   if (!auth.isAdminUser) {
-    return new Response(
-      JSON.stringify({
-        ok: false,
-        error: 'Permiso denegado: Solo joel.botana@gmail.com (jobial24) puede eliminar carreras.'
-      }),
-      { status: 403, headers: corsHeaders }
-    );
+    return new Response(JSON.stringify({ ok: false, error: 'Solo joel.botana@gmail.com puede eliminar carreras.' }), { status: 403, headers: corsHeaders });
   }
 
   const url = new URL(request.url);
   const raceId = url.searchParams.get('id') || body.id;
-
   if (!raceId) {
-    return new Response(
-      JSON.stringify({ ok: false, error: 'Falta el parámetro id de la carrera a eliminar.' }),
-      { status: 400, headers: corsHeaders }
-    );
+    return new Response(JSON.stringify({ ok: false, error: 'Falta id de la carrera.' }), { status: 400, headers: corsHeaders });
   }
 
-  try {
-    await env.DB.batch([
-      env.DB.prepare(`DELETE FROM races WHERE id = ?1`).bind(raceId),
-      env.DB.prepare(
-        `INSERT INTO sync_logs (races_upserted, status, details) VALUES (0, 'ADMIN_DELETE', ?1)`
-      ).bind(`[${auth.adminIdentifier}] Eliminada carrera ID: ${raceId}`)
-    ]);
+  await env.DB.batch([
+    env.DB.prepare(`DELETE FROM races WHERE id = ?1`).bind(raceId),
+    env.DB.prepare(`INSERT INTO sync_logs (races_upserted, status, details) VALUES (0, 'ADMIN_DELETE', ?1)`).bind(`[${auth.adminIdentifier}] Eliminada: ${raceId}`)
+  ]);
 
-    return new Response(
-      JSON.stringify({
-        ok: true,
-        deletedId: raceId,
-        admin: auth.adminIdentifier,
-        message: `Carrera ${raceId} eliminada por Admin.`
-      }),
-      { status: 200, headers: corsHeaders }
-    );
-  } catch (error) {
-    return new Response(
-      JSON.stringify({ ok: false, error: error.message }),
-      { status: 500, headers: corsHeaders }
-    );
-  }
+  return new Response(JSON.stringify({ ok: true, deletedId: raceId }), { status: 200, headers: corsHeaders });
 }

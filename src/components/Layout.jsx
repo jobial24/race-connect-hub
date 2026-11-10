@@ -36,7 +36,7 @@ export default function Layout({ children }) {
   );
 
   return (
-    <div className="flex h-[100dvh] w-full bg-[#0B0F19] text-gray-200 overflow-hidden font-sans">
+    <div className="flex h-dvh w-full bg-[#0B0F19] text-gray-200 overflow-hidden font-sans">
       {/* Escritorio: barra lateral */}
       <aside className="hidden md:flex w-64 bg-[#0e1320] border-r border-white/5 p-5 flex-col justify-between shrink-0">
         <div>

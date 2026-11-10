@@ -755,7 +755,7 @@ Devuelve ÚNICAMENTE un JSON válido con formato de array de objetos, sin bloque
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
           {/* Brand Logo */}
           <div className="flex items-center gap-3 cursor-pointer" onClick={() => setActiveTab('dashboard')}>
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#FC4C02] to-amber-600 flex items-center justify-center shadow-lg shadow-[#FC4C02]/25">
+            <div className="w-11 h-11 rounded-2xl bg-linear-to-br from-[#FC4C02] to-amber-600 flex items-center justify-center shadow-lg shadow-[#FC4C02]/25">
               <Flame className="w-6 h-6 text-white" />
             </div>
             <div>
@@ -902,7 +902,7 @@ Devuelve ÚNICAMENTE un JSON válido con formato de array de objetos, sin bloque
             {/* Hero Banner with Live Next Race & Strava Summary */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
               {/* Left 7 Cols: Athlete Hero & Next Target Race Countdown */}
-              <div className="lg:col-span-7 relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800 border border-slate-800 p-6 sm:p-8 flex flex-col justify-between">
+              <div className="lg:col-span-7 relative overflow-hidden rounded-3xl bg-linear-to-br from-slate-900 via-slate-900 to-slate-800 border border-slate-800 p-6 sm:p-8 flex flex-col justify-between">
                 <div className="absolute -right-12 -top-12 w-64 h-64 bg-[#FC4C02]/10 rounded-full blur-3xl pointer-events-none" />
 
                 <div className="space-y-4 relative z-10">
@@ -1078,7 +1078,7 @@ Devuelve ÚNICAMENTE un JSON válido con formato de array de objetos, sin bloque
             </div>
 
             {/* ZERO-TOUCH AUTO-SYNC ENGINE LIVE BAR */}
-            <div className="rounded-3xl bg-gradient-to-r from-slate-900 via-slate-900 to-emerald-950/40 border border-slate-800 p-6">
+            <div className="rounded-3xl bg-linear-to-r from-slate-900 via-slate-900 to-emerald-950/40 border border-slate-800 p-6">
               <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
                 <div className="space-y-1.5 max-w-2xl">
                   <div className="flex items-center gap-2.5">
@@ -1186,7 +1186,7 @@ Devuelve ÚNICAMENTE un JSON válido con formato de array de objetos, sin bloque
                               alt={race.name}
                               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                             />
-                            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
+                            <div className="absolute inset-0 bg-linear-to-t from-slate-950 via-slate-950/40 to-transparent" />
                             <div className="absolute top-3 left-3 flex items-center gap-1.5">
                               <span
                                 className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border backdrop-blur-md ${getDisciplineBadge(
@@ -1435,7 +1435,7 @@ Devuelve ÚNICAMENTE un JSON válido con formato de array de objetos, sin bloque
                           alt={race.name}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/30 to-transparent" />
+                        <div className="absolute inset-0 bg-linear-to-t from-slate-950 via-slate-950/30 to-transparent" />
                         <div className="absolute top-3 left-3 flex items-center gap-2">
                           <span
                             className={`text-xs font-bold px-3 py-1 rounded-full border backdrop-blur-md ${getDisciplineBadge(
@@ -1724,7 +1724,7 @@ Devuelve ÚNICAMENTE un JSON válido con formato de array de objetos, sin bloque
         {activeTab === 'strava' && (
           <div className="space-y-8">
             {/* Strava Header Banner */}
-            <div className="rounded-3xl bg-gradient-to-r from-[#FC4C02] to-orange-600 p-6 sm:p-8 text-white flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-xl shadow-[#FC4C02]/15">
+            <div className="rounded-3xl bg-linear-to-r from-[#FC4C02] to-orange-600 p-6 sm:p-8 text-white flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-xl shadow-[#FC4C02]/15">
               <div className="space-y-2">
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-black/25 text-xs font-bold">
                   <Activity className="w-3.5 h-3.5" /> API OFICIAL STRAVA V3 CONECTADA
@@ -2088,7 +2088,7 @@ Devuelve ÚNICAMENTE un JSON válido con formato de array de objetos, sin bloque
           <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl">
             <div className="relative h-48">
               <img src={selectedRaceModal.image} alt={selectedRaceModal.name} className="w-full h-full object-cover" />
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent" />
+              <div className="absolute inset-0 bg-linear-to-t from-slate-900 via-slate-900/40 to-transparent" />
               <button
                 onClick={() => setSelectedRaceModal(null)}
                 className="absolute top-4 right-4 p-2 rounded-xl bg-slate-950/80 text-white"

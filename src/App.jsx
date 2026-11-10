@@ -2,249 +2,310 @@ import React, { useState, useEffect, useMemo } from 'react';
 import {
   Activity, Calendar, MapPin, Trophy, RefreshCw, CheckCircle2,
   ExternalLink, Search, Shield, Plus, Trash2, Mountain, Award,
-  UserCheck, LogOut, Link2, Unlink, X, AlertCircle
+  LogOut, Link2, Unlink, X, AlertTriangle, Sparkles
 } from 'lucide-react';
 
+const STRAVA_CLIENT_ID = '283188';
 const ADMIN_LIST = ['joel.botana@gmail.com', 'jobial24'];
 
+// Formateador de fechas al español: "24/01/2027 (dom, 24 ene 2027)"
+function formatSpanishDate(dateStr) {
+  if (!dateStr) return 'Fecha pendiente';
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) return dateStr;
+  const parts = String(dateStr).slice(0, 10).split('-');
+  if (parts.length !== 3) return dateStr;
+  const [year, month, day] = parts.map(Number);
+  const dateObj = new Date(year, month - 1, day);
+  if (isNaN(dateObj.getTime())) return `${day}/${month}/${year}`;
+
+  const ddmmyyyy = `${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}/${year}`;
+  const textoCorto = dateObj.toLocaleDateString('es-ES', {
+    weekday: 'short',
+    day: '2-digit',
+    month: 'short'
+  });
+  return `${ddmmyyyy} • ${textoCorto}`;
+}
+
 export default function App() {
-  const [activeTab, setActiveTab] = useState('explore');
-  const [races, setRaces] = useState([]);
-  const [loadingRaces, setLoadingRaces] = useState(true);
-
-  // Usuario actual editable y persistente en localStorage
-  const [currentUser, setCurrentUser] = useState(() => {
-    const saved = localStorage.getItem('rch_user');
-    if (saved) {
-      try { return JSON.parse(saved); } catch (_) {}
-    }
-    return { username: 'jobial24', email: 'joel.botana@gmail.com' };
-  });
-
-  const isAdmin = useMemo(() => {
-    const u = (currentUser.username || '').toLowerCase().trim();
-    const e = (currentUser.email || '').toLowerCase().trim();
-    return ADMIN_LIST.includes(u) || ADMIN_LIST.includes(e);
-  }, [currentUser]);
-
-  // Estado de Mis Carreras por usuario
-  const [myRaces, setMyRaces] = useState(() => {
-    const saved = localStorage.getItem('rch_my_races');
-    if (saved) {
-      try { return JSON.parse(saved); } catch (_) {}
-    }
-    return [];
-  });
-
-  useEffect(() => {
-    localStorage.setItem('rch_my_races', JSON.stringify(myRaces));
-  }, [myRaces]);
-
-  // Estado real de Strava (guardado en localStorage)
-  const [stravaAccount, setStravaAccount] = useState(() => {
-    const saved = localStorage.getItem('rch_strava_account');
+  // Nueva clave limpia rch_auth_v2 para garantizar que salga la pantalla de Login
+  const [user, setUser] = useState(() => {
+    const saved = localStorage.getItem('rch_auth_v2');
     if (saved) {
       try { return JSON.parse(saved); } catch (_) {}
     }
     return null;
   });
 
-  const [stravaActivities, setStravaActivities] = useState(() => {
-    const saved = localStorage.getItem('rch_strava_activities');
-    if (saved) {
-      try { return JSON.parse(saved); } catch (_) {}
-    }
-    return [];
-  });
+  const [authMode, setAuthMode] = useState('login');
+  const [authForm, setAuthForm] = useState({ username: '', email: '', password: '' });
+  const [authError, setAuthError] = useState('');
+  const [authLoading, setAuthLoading] = useState(false);
 
-  const [stravaConfig, setStravaConfig] = useState(() => {
-    const saved = localStorage.getItem('rch_strava_config');
-    if (saved) {
-      try { return JSON.parse(saved); } catch (_) {}
-    }
-    return { clientId: '', clientSecret: '' };
-  });
+  const [activeTab, setActiveTab] = useState('explore');
+  const [races, setRaces] = useState([]);
+  const [loadingRaces, setLoadingRaces] = useState(true);
+  const [myRaces, setMyRaces] = useState([]);
+  const [stravaActivities, setStravaActivities] = useState([]);
+  const [loadingStrava, setLoadingStrava] = useState(false);
 
-  // Modales
-  const [showUserModal, setShowUserModal] = useState(false);
-  const [showStravaModal, setShowStravaModal] = useState(false);
-  const [showAdminModal, setShowAdminModal] = useState(false);
-
-  // Formularios
-  const [userForm, setUserForm] = useState(currentUser);
   const [searchQuery, setSearchQuery] = useState('');
+  const [autoDiscoverInput, setAutoDiscoverInput] = useState('');
   const [selectedDiscipline, setSelectedDiscipline] = useState('Todas');
   const [isSyncing, setIsSyncing] = useState(false);
-  const [statusMsg, setStatusMsg] = useState('Conectado a Cloudflare D1');
+  const [statusMsg, setStatusMsg] = useState('Auto-Actualización Activa');
+  const [showAdminModal, setShowAdminModal] = useState(false);
 
   const [newRace, setNewRace] = useState({
     name: '',
-    date: '2026-12-31',
+    date: '2027-01-24',
     location: '',
     province: 'Barcelona',
     discipline: 'Running',
     distance_km: 10,
     elevation_m: 100,
     price_eur: 20,
-    website_url: '',
-    image_url: ''
+    website_url: ''
   });
 
-  // Mapear fila SQL de D1 al formato del frontend
-  const mapD1Race = (r) => ({
-    id: r.id,
-    name: r.name,
-    date: r.date,
-    location: r.location,
-    province: r.province || 'España',
-    discipline: r.discipline || 'Running',
-    distance: `${r.distance_km}K`,
-    distanceKm: Number(r.distance_km),
-    elevation: `+${r.elevation_m || 0}m`,
-    price: `${r.price_eur || 0}€`,
-    status: r.status || 'Inscripciones Abiertas',
-    image: r.image_url || 'https://images.unsplash.com/photo-1552674605-db6ffd4facb5?auto=format&fit=crop&w=800&q=80',
-    url: r.website_url || '#'
-  });
+  const isAdmin = useMemo(() => {
+    if (!user) return false;
+    const u = (user.username || '').toLowerCase().trim();
+    const e = (user.email || '').toLowerCase().trim();
+    return user.role === 'admin' || ADMIN_LIST.includes(u) || ADMIN_LIST.includes(e);
+  }, [user]);
 
-  // 1. Cargar carreras de Cloudflare D1
-  const loadRacesFromD1 = async () => {
+  const mapD1Race = (r) => {
+    const km = Number(r.distance_km ?? r.distanceKm ?? 10);
+    const elev = Number(r.elevation_m ?? 0);
+    const price = Number(r.price_eur ?? 0);
+    return {
+      id: r.id,
+      name: r.name || 'Carrera Oficial',
+      rawDate: r.date || '2027-01-01',
+      dateFormatted: formatSpanishDate(r.date),
+      location: r.location || 'España',
+      province: r.province || 'España',
+      discipline: r.discipline || 'Running',
+      distance: `${km} km`,
+      distanceKm: km,
+      elevation: `+${elev} m`,
+      price: price > 0 ? `${price} €` : 'Gratis',
+      status: r.status || 'Inscripciones Abiertas',
+      image: r.image_url || 'https://images.unsplash.com/photo-1552674605-db6ffd4facb5?auto=format&fit=crop&w=800&q=80',
+      url: r.website_url || '#'
+    };
+  };
+
+  // Cargar y auto-actualizar carreras desde D1
+  const fetchRaces = async (reset = false) => {
     setLoadingRaces(true);
     try {
-      const res = await fetch(`/api/sync-races?email=${encodeURIComponent(currentUser.email)}`);
+      const params = new URLSearchParams();
+      if (user?.email) params.set('email', user.email);
+      if (reset) params.set('reset', '1');
+
+      const res = await fetch(`/api/sync-races?${params.toString()}`);
       if (res.ok) {
         const data = await res.json();
         if (data.ok && Array.isArray(data.races)) {
           setRaces(data.races.map(mapD1Race));
+          setStatusMsg(`Auto-Sync: ${data.races.length} carreras activas`);
         }
       }
-    } catch (err) {
-      console.warn('Error cargando D1:', err);
+    } catch (e) {
+      console.warn('Error cargando carreras:', e);
     } finally {
       setLoadingRaces(false);
     }
   };
 
-  useEffect(() => {
-    loadRacesFromD1();
-  }, [currentUser.email]);
+  // Cargar datos privados de la persona logueada (sus dorsales y su Strava individual)
+  const fetchUserData = async (currentUser) => {
+    if (!currentUser?.id || currentUser.id === 'guest') return;
+    try {
+      const regRes = await fetch(`/api/auth?userId=${encodeURIComponent(currentUser.id)}`);
+      if (regRes.ok) {
+        const regData = await regRes.json();
+        if (regData.ok) setMyRaces(regData.registrations || []);
+      }
 
-  // 2. Capturar el retorno de autorización OAuth2 de Strava (?code=...)
+      setLoadingStrava(true);
+      const stravaRes = await fetch(`/api/strava-auth?userId=${encodeURIComponent(currentUser.id)}`);
+      if (stravaRes.ok) {
+        const stravaData = await stravaRes.json();
+        if (stravaData.ok && stravaData.connected) {
+          setStravaActivities(stravaData.activities || []);
+          const updatedUser = { ...currentUser, stravaConnected: true, stravaAthlete: stravaData.athlete };
+          setUser(updatedUser);
+          localStorage.setItem('rch_auth_v2', JSON.stringify(updatedUser));
+        } else {
+          setStravaActivities([]);
+        }
+      }
+    } catch (_) {
+    } finally {
+      setLoadingStrava(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchRaces();
+    if (user) {
+      fetchUserData(user);
+    }
+  }, [user?.id]);
+
+  // Capturar retorno OAuth de Strava (?code=...) para el usuario actual
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const code = params.get('code');
-    if (!code) return;
+    if (!code || !user?.id) return;
 
-    // Limpiar ?code= de la URL
     window.history.replaceState({}, document.title, window.location.pathname);
 
-    async function completeStravaOAuth() {
-      setStatusMsg('Verificando cuenta de Strava...');
+    async function linkPersonalStrava() {
+      setLoadingStrava(true);
+      setActiveTab('strava');
       try {
-        const savedCfg = JSON.parse(localStorage.getItem('rch_strava_config') || '{}');
         const res = await fetch('/api/strava-auth', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            code,
-            clientId: savedCfg.clientId,
-            clientSecret: savedCfg.clientSecret
-          })
+          body: JSON.stringify({ code, userId: user.id })
         });
         const data = await res.json();
         if (data.ok && data.athlete) {
-          setStravaAccount(data.athlete);
+          const updated = { ...user, stravaConnected: true, stravaAthlete: data.athlete };
+          setUser(updated);
+          localStorage.setItem('rch_auth_v2', JSON.stringify(updated));
           setStravaActivities(data.activities || []);
-          localStorage.setItem('rch_strava_account', JSON.stringify(data.athlete));
-          localStorage.setItem('rch_strava_activities', JSON.stringify(data.activities || []));
-          setActiveTab('strava');
-          setStatusMsg(`Strava conectado: ${data.athlete.username}`);
+          setStatusMsg(`Strava conectado: @${data.athlete.username}`);
         } else {
-          alert(`Error al conectar Strava: ${data.error || 'Revisa tu Client ID y Secret'}`);
+          alert(data.error || 'Falta STRAVA_CLIENT_SECRET en Cloudflare Pages.');
         }
-      } catch (e) {
-        alert('Error de red validando Strava OAuth.');
+      } catch (_) {
+        alert('Error de red al conectar con Strava.');
+      } finally {
+        setLoadingStrava(false);
       }
     }
 
-    completeStravaOAuth();
-  }, []);
+    linkPersonalStrava();
+  }, [user?.id]);
 
-  // Cambiar de usuario
-  const handleSwitchUser = (e) => {
+  // Login / Registro contra Cloudflare D1
+  const handleAuthSubmit = async (e) => {
     e.preventDefault();
-    const updated = {
-      username: userForm.username.trim() || 'invitado',
-      email: userForm.email.trim().toLowerCase() || 'invitado@correo.com'
-    };
-    setCurrentUser(updated);
-    localStorage.setItem('rch_user', JSON.stringify(updated));
-    setShowUserModal(false);
-  };
-
-  // Iniciar OAuth real con Strava
-  const handleStartStravaOAuth = (e) => {
-    e.preventDefault();
-    if (!stravaConfig.clientId.trim() || !stravaConfig.clientSecret.trim()) {
-      alert('Introduce tu Client ID y Client Secret de strava.com/settings/api');
-      return;
+    setAuthError('');
+    setAuthLoading(true);
+    try {
+      const res = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: authMode,
+          username: authForm.username,
+          email: authForm.email,
+          password: authForm.password
+        })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        setAuthError(data.error || 'Credenciales incorrectas');
+      } else {
+        setUser(data.user);
+        localStorage.setItem('rch_auth_v2', JSON.stringify(data.user));
+      }
+    } catch (_) {
+      setAuthError('Error conectando con /api/auth en Cloudflare.');
+    } finally {
+      setAuthLoading(false);
     }
-    localStorage.setItem('rch_strava_config', JSON.stringify(stravaConfig));
-    const redirectUri = encodeURIComponent(window.location.origin);
-    const oauthUrl = `https://www.strava.com/oauth/authorize?client_id=${stravaConfig.clientId.trim()}&response_type=code&redirect_uri=${redirectUri}&approval_prompt=force&scope=read,activity:read_all`;
-    window.location.href = oauthUrl;
   };
 
-  // Desconectar Strava
-  const handleDisconnectStrava = () => {
-    setStravaAccount(null);
+  const handleLogout = () => {
+    setUser(null);
+    setMyRaces([]);
     setStravaActivities([]);
-    localStorage.removeItem('rch_strava_account');
-    localStorage.removeItem('rch_strava_activities');
+    localStorage.removeItem('rch_auth_v2');
   };
 
-  // Importar las 4 carreras próximas del catálogo (solo si tú le das al botón)
-  const handleSyncCatalog = async () => {
-    if (!isAdmin) return;
+  // Buscador automático que encuentra y añade carreras solas a D1
+  const handleAutoDiscoverSubmit = async (e) => {
+    e.preventDefault();
     setIsSyncing(true);
+    setStatusMsg('Buscando y añadiendo carreras automáticamente...');
     try {
       const res = await fetch('/api/sync-races', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Admin-Email': currentUser.email,
-          'X-Admin-User': currentUser.username
+          'X-Admin-Email': user?.email || 'joel.botana@gmail.com'
         },
-        body: JSON.stringify({ adminEmail: currentUser.email })
+        body: JSON.stringify({
+          adminEmail: user?.email || 'joel.botana@gmail.com',
+          discoverQuery: autoDiscoverInput.trim()
+        })
       });
       const data = await res.json();
       if (data.ok && Array.isArray(data.races)) {
         setRaces(data.races.map(mapD1Race));
-        setStatusMsg(`Catálogo sincronizado (${data.races.length} carreras)`);
+        setAutoDiscoverInput('');
+        setStatusMsg(`Catálogo actualizado (${data.races.length} carreras)`);
       }
     } finally {
       setIsSyncing(false);
     }
   };
 
-  // Vaciar todas las carreras de D1
-  const handleClearAllRaces = async () => {
-    if (!isAdmin) return;
-    if (!window.confirm('¿Seguro que quieres borrar todas las carreras actuales de la base de datos D1 para empezar limpio?')) return;
-    setRaces([]);
-    await fetch('/api/sync-races?id=ALL', {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Admin-Email': currentUser.email,
-        'X-Admin-User': currentUser.username
-      },
-      body: JSON.stringify({ adminEmail: currentUser.email, id: 'ALL' })
-    });
-    setStatusMsg('Base de datos D1 vaciada');
+  const handleConnectMyStrava = () => {
+    if (!user || user.id === 'guest') {
+      alert('Inicia sesión con tu cuenta antes de conectar tu Strava personal.');
+      return;
+    }
+    const redirectUri = encodeURIComponent(window.location.origin);
+    window.location.href = `https://www.strava.com/oauth/authorize?client_id=${STRAVA_CLIENT_ID}&response_type=code&redirect_uri=${redirectUri}&approval_prompt=force&scope=read,activity:read_all`;
   };
 
-  // Crear una carrera personalizada (Admin)
+  const handleDisconnectMyStrava = async () => {
+    if (!user) return;
+    await fetch(`/api/strava-auth?userId=${encodeURIComponent(user.id)}`, { method: 'DELETE' });
+    const updated = { ...user, stravaConnected: false, stravaAthlete: null };
+    setUser(updated);
+    localStorage.setItem('rch_auth_v2', JSON.stringify(updated));
+    setStravaActivities([]);
+  };
+
+  const toggleRegisterRace = async (raceId) => {
+    if (!user || user.id === 'guest') {
+      alert('Inicia sesión con tu cuenta para guardar inscripciones.');
+      return;
+    }
+    const exists = myRaces.some((mr) => mr.raceId === raceId);
+    let bib = 'S/D';
+    let targetTime = '--:--';
+    if (!exists) {
+      bib = window.prompt('Introduce tu número de dorsal (opcional):', '1042') || 'S/D';
+      targetTime = window.prompt('Tiempo objetivo (ej. 1:30:00):', '1:30:00') || '--:--';
+    }
+
+    const res = await fetch('/api/auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'toggle_race',
+        userId: user.id,
+        raceId,
+        bib,
+        targetTime
+      })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.ok) setMyRaces(data.registrations || []);
+    }
+  };
+
   const handleCreateRaceAdmin = async (e) => {
     e.preventDefault();
     if (!isAdmin) return;
@@ -254,57 +315,29 @@ export default function App() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Admin-Email': currentUser.email,
-          'X-Admin-User': currentUser.username
+          'X-Admin-Email': user.email,
+          'X-Admin-User': user.username
         },
-        body: JSON.stringify({ adminEmail: currentUser.email, race: newRace })
+        body: JSON.stringify({ adminEmail: user.email, race: newRace })
       });
       const data = await res.json();
       if (data.ok && Array.isArray(data.races)) {
         setRaces(data.races.map(mapD1Race));
       }
       setShowAdminModal(false);
-      setNewRace({
-        name: '',
-        date: '2026-12-31',
-        location: '',
-        province: 'Barcelona',
-        discipline: 'Running',
-        distance_km: 10,
-        elevation_m: 100,
-        price_eur: 20,
-        website_url: '',
-        image_url: ''
-      });
     } finally {
       setIsSyncing(false);
     }
   };
 
-  // Borrar una carrera individual (Admin)
   const handleDeleteRaceAdmin = async (id) => {
     if (!isAdmin) return;
     setRaces((prev) => prev.filter((r) => r.id !== id));
     await fetch(`/api/sync-races?id=${encodeURIComponent(id)}`, {
       method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Admin-Email': currentUser.email,
-        'X-Admin-User': currentUser.username
-      },
-      body: JSON.stringify({ adminEmail: currentUser.email, id })
+      headers: { 'Content-Type': 'application/json', 'X-Admin-Email': user.email },
+      body: JSON.stringify({ adminEmail: user.email, id })
     });
-  };
-
-  const toggleRegisterRace = (raceId) => {
-    const exists = myRaces.find((mr) => mr.raceId === raceId);
-    if (exists) {
-      setMyRaces(myRaces.filter((mr) => mr.raceId !== raceId));
-    } else {
-      const bib = window.prompt('Introduce tu número de dorsal (opcional):', '1042') || 'S/D';
-      const targetTime = window.prompt('Introduce tu tiempo objetivo (ej. 1:30:00):', '1:30:00') || '--:--';
-      setMyRaces([...myRaces, { raceId, bib, targetTime }]);
-    }
   };
 
   const filteredRaces = useMemo(() => {
@@ -317,9 +350,112 @@ export default function App() {
     });
   }, [races, selectedDiscipline, searchQuery]);
 
+  // =========================================================================
+  // VISTA 1: PANTALLA DE LOGIN / CREAR CUENTA
+  // =========================================================================
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-[#0B0F17] flex items-center justify-center p-4 font-sans text-slate-100">
+        <div className="w-full max-w-md bg-[#111726] border border-slate-800 rounded-2xl p-8 shadow-2xl space-y-6">
+          <div className="flex flex-col items-center text-center space-y-2">
+            <div className="w-12 h-12 rounded-xl bg-[#FC4C02]/15 border border-[#FC4C02]/30 flex items-center justify-center text-[#FC4C02]">
+              <Trophy className="w-6 h-6" />
+            </div>
+            <h1 className="text-2xl font-bold text-white">
+              {authMode === 'register' ? 'Crear cuenta' : 'Iniciar sesión'}
+            </h1>
+            <p className="text-xs text-slate-400 max-w-xs leading-relaxed">
+              Sincroniza tus inscripciones y vincula tu cuenta personal de Strava mediante OAuth2.
+            </p>
+          </div>
+
+          <form onSubmit={handleAuthSubmit} className="space-y-4">
+            {authMode === 'register' && (
+              <div>
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                  Nombre Visible
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="jobial24"
+                  value={authForm.username}
+                  onChange={(e) => setAuthForm({ ...authForm, username: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#0B0F17] border border-slate-800 text-sm text-white focus:outline-none focus:border-[#FC4C02]"
+                />
+              </div>
+            )}
+
+            <div>
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                Email
+              </label>
+              <input
+                type="email"
+                required
+                placeholder="joel.botana@gmail.com"
+                value={authForm.email}
+                onChange={(e) => setAuthForm({ ...authForm, email: e.target.value })}
+                className="w-full px-3.5 py-2.5 rounded-xl bg-[#0B0F17] border border-slate-800 text-sm text-white focus:outline-none focus:border-[#FC4C02]"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                Contraseña
+              </label>
+              <input
+                type="password"
+                required
+                placeholder="••••••••••••"
+                value={authForm.password}
+                onChange={(e) => setAuthForm({ ...authForm, password: e.target.value })}
+                className="w-full px-3.5 py-2.5 rounded-xl bg-[#0B0F17] border border-slate-800 text-sm text-white focus:outline-none focus:border-[#FC4C02]"
+              />
+            </div>
+
+            {authError && (
+              <div className="flex items-center gap-2 text-xs text-rose-400 bg-rose-500/10 border border-rose-500/20 p-3 rounded-xl">
+                <AlertTriangle className="w-4 h-4 shrink-0" />
+                <span>{authError}</span>
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={authLoading}
+              className="w-full py-3 rounded-xl bg-[#FC4C02] hover:bg-[#e04300] text-white font-bold text-sm shadow-lg shadow-[#FC4C02]/25 transition"
+            >
+              {authLoading
+                ? 'Verificando...'
+                : authMode === 'register'
+                ? 'Crear cuenta'
+                : 'Iniciar sesión'}
+            </button>
+          </form>
+
+          <div className="flex flex-col items-center gap-3 pt-2 text-xs">
+            <button
+              type="button"
+              onClick={() => {
+                setAuthError('');
+                setAuthMode(authMode === 'register' ? 'login' : 'register');
+              }}
+              className="text-[#FC4C02] hover:underline font-semibold"
+            >
+              {authMode === 'register' ? 'Ya tengo cuenta (Iniciar sesión)' : '¿Primera vez? Crear cuenta nueva'}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // =========================================================================
+  // VISTA 2: APLICACIÓN PRINCIPAL
+  // =========================================================================
   return (
     <div className="min-h-screen bg-[#0B0F17] text-slate-100 font-sans">
-      {/* Header */}
       <header className="sticky top-0 z-30 border-b border-slate-800/80 bg-[#0B0F17]/90 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
@@ -327,17 +463,23 @@ export default function App() {
               <Trophy className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h1 className="text-lg font-bold tracking-tight text-white">Race Connect Hub</h1>
-              <p className="text-xs text-slate-400">{statusMsg}</p>
+              <div className="flex items-center gap-2">
+                <h1 className="text-lg font-bold tracking-tight text-white">Race Connect Hub</h1>
+                <span className="px-2 py-0.5 text-[11px] font-semibold rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                  {statusMsg}
+                </span>
+              </div>
+              <p className="text-xs text-slate-400">
+                Conectado como <strong className="text-white">{user.username}</strong> ({user.email})
+              </p>
             </div>
           </div>
 
-          {/* Pestañas */}
           <nav className="flex items-center gap-1 bg-slate-900/90 p-1 rounded-xl border border-slate-800">
             {[
               { id: 'explore', label: `Calendario (${races.length})`, icon: Calendar },
               { id: 'my-races', label: `Mis Carreras (${myRaces.length})`, icon: Award },
-              { id: 'strava', label: 'Strava', icon: Activity }
+              { id: 'strava', label: 'Mi Strava', icon: Activity }
             ].map((tab) => {
               const Icon = tab.icon;
               return (
@@ -357,45 +499,38 @@ export default function App() {
             })}
           </nav>
 
-          {/* Selector de Usuario + Acciones Admin */}
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => {
-                setUserForm(currentUser);
-                setShowUserModal(true);
-              }}
-              className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold border transition ${
-                isAdmin
-                  ? 'bg-indigo-500/15 border-indigo-500/40 text-indigo-300 hover:bg-indigo-500/25'
-                  : 'bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700'
-              }`}
-              title="Haz clic para cambiar de usuario"
-            >
-              {isAdmin ? <Shield className="w-4 h-4 text-indigo-400" /> : <UserCheck className="w-4 h-4 text-emerald-400" />}
-              <span>{currentUser.username}</span>
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-black/30">
-                {isAdmin ? 'ADMIN' : 'USER'}
-              </span>
-            </button>
-
             {isAdmin && (
               <>
+                <span className="hidden sm:flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 text-xs font-semibold">
+                  <Shield className="w-3.5 h-3.5" />
+                  Admin
+                </span>
                 <button
                   onClick={() => setShowAdminModal(true)}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#FC4C02] hover:bg-[#e04300] text-xs font-bold text-white transition"
+                  className="flex items-center gap-1 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-white border border-slate-700"
                 >
-                  <Plus className="w-4 h-4" />
-                  <span>Nueva Carrera</span>
+                  <Plus className="w-4 h-4 text-[#FC4C02]" />
+                  <span>Manual</span>
                 </button>
                 <button
-                  onClick={handleClearAllRaces}
-                  className="p-2 rounded-xl bg-rose-500/15 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30 transition"
-                  title="Vaciar todas las carreras de D1"
+                  onClick={() => fetchRaces(true)}
+                  disabled={loadingRaces}
+                  className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700"
+                  title="Reparar y sincronizar carreras automáticamente"
                 >
-                  <Trash2 className="w-4 h-4" />
+                  <RefreshCw className={`w-4 h-4 ${loadingRaces ? 'animate-spin text-[#FC4C02]' : ''}`} />
                 </button>
               </>
             )}
+
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/30 text-xs font-semibold transition"
+            >
+              <LogOut className="w-4 h-4" />
+              <span>Cambiar cuenta</span>
+            </button>
           </div>
         </div>
       </header>
@@ -403,6 +538,41 @@ export default function App() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         {activeTab === 'explore' && (
           <div className="space-y-6">
+            {/* Barra de Auto-Descubrimiento Automático de Carreras */}
+            <form
+              onSubmit={handleAutoDiscoverSubmit}
+              className="p-4 rounded-2xl bg-gradient-to-r from-[#FC4C02]/15 via-slate-900 to-slate-900 border border-[#FC4C02]/30 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3"
+            >
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-[#FC4C02]/20 text-[#FC4C02]">
+                  <Sparkles className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white">Buscador Automático de Carreras (Zero-Touch)</h3>
+                  <p className="text-xs text-slate-400">
+                    Las carreras de España se actualizan solas. También puedes escribir una ciudad o evento para que el robot lo busque y añada a D1:
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={autoDiscoverInput}
+                  onChange={(e) => setAutoDiscoverInput(e.target.value)}
+                  placeholder="Ej: Girona, Hyrox Madrid, Trail..."
+                  className="px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:outline-none focus:border-[#FC4C02]"
+                />
+                <button
+                  type="submit"
+                  disabled={isSyncing}
+                  className="px-4 py-2 rounded-xl bg-[#FC4C02] hover:bg-[#e04300] text-white text-xs font-bold whitespace-nowrap"
+                >
+                  {isSyncing ? 'Buscando...' : 'Auto-Buscar y Añadir'}
+                </button>
+              </div>
+            </form>
+
+            {/* Filtro de búsqueda local */}
             <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between bg-slate-900/70 p-4 rounded-2xl border border-slate-800/80">
               <div className="relative flex-1">
                 <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -410,7 +580,7 @@ export default function App() {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Buscar carrera o ciudad..."
+                  placeholder="Filtrar carreras en pantalla (Terrassa, Barcelona, Sabadell, Valencia...)"
                   className="w-full pl-10 pr-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#FC4C02]"
                 />
               </div>
@@ -431,28 +601,9 @@ export default function App() {
               </div>
             </div>
 
-            {filteredRaces.length === 0 ? (
-              <div className="text-center py-16 bg-slate-900/40 rounded-2xl border border-slate-800/80 space-y-4">
-                <p className="text-slate-400 text-sm">
-                  {loadingRaces ? 'Cargando carreras desde Cloudflare D1...' : 'No hay carreras en la base de datos ahora mismo.'}
-                </p>
-                {isAdmin && !loadingRaces && (
-                  <div className="flex justify-center gap-3">
-                    <button
-                      onClick={() => setShowAdminModal(true)}
-                      className="px-4 py-2.5 rounded-xl bg-[#FC4C02] text-white text-xs font-bold"
-                    >
-                      + Crear mi primera carrera
-                    </button>
-                    <button
-                      onClick={handleSyncCatalog}
-                      disabled={isSyncing}
-                      className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold"
-                    >
-                      Importar 4 carreras próximas de Cataluña
-                    </button>
-                  </div>
-                )}
+            {loadingRaces ? (
+              <div className="text-center py-16 text-slate-400 text-sm">
+                Sincronizando catálogo automático de carreras...
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -482,7 +633,7 @@ export default function App() {
                           {isAdmin && (
                             <button
                               onClick={() => handleDeleteRaceAdmin(race.id)}
-                              title="Eliminar carrera (Admin)"
+                              title="Eliminar carrera"
                               className="absolute top-3 right-3 p-1.5 rounded-lg bg-rose-500/80 hover:bg-rose-600 text-white transition"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -495,11 +646,11 @@ export default function App() {
 
                         <div className="p-4 space-y-2 text-xs text-slate-300">
                           <div className="flex items-center justify-between">
-                            <span className="flex items-center gap-1.5 text-slate-400">
+                            <span className="flex items-center gap-1.5 font-semibold text-amber-300">
                               <Calendar className="w-3.5 h-3.5 text-[#FC4C02]" />
-                              {race.date}
+                              {race.dateFormatted}
                             </span>
-                            <span className="font-semibold text-emerald-400">{race.status}</span>
+                            <span className="font-semibold text-emerald-400">{race.price}</span>
                           </div>
                           <div className="flex items-center justify-between">
                             <span className="flex items-center gap-1.5 text-slate-400">
@@ -524,7 +675,7 @@ export default function App() {
                           }`}
                         >
                           <CheckCircle2 className="w-4 h-4" />
-                          {isRegistered ? 'Inscrito (Quitar)' : 'Apuntarme'}
+                          {isRegistered ? 'Inscrito' : 'Apuntarme'}
                         </button>
                         {race.url && race.url !== '#' && (
                           <a
@@ -547,12 +698,10 @@ export default function App() {
 
         {activeTab === 'my-races' && (
           <div className="space-y-4">
-            <h2 className="text-xl font-bold text-white">
-              Inscripciones de {currentUser.username}
-            </h2>
+            <h2 className="text-xl font-bold text-white">Inscripciones de {user.username}</h2>
             {myRaces.length === 0 ? (
               <div className="p-10 text-center bg-slate-900/50 rounded-2xl border border-slate-800 text-slate-400 text-sm">
-                Aún no te has apuntado a ninguna carrera desde el Calendario.
+                Aún no tienes carreras guardadas. Apúntate desde el Calendario.
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -568,7 +717,7 @@ export default function App() {
                         <div>
                           <span className="text-xs font-bold text-[#FC4C02]">{race.discipline} • {race.distance}</span>
                           <h3 className="text-lg font-bold text-white">{race.name}</h3>
-                          <p className="text-xs text-slate-400">{race.date} — {race.location}</p>
+                          <p className="text-xs text-amber-300 mt-1">{race.dateFormatted} — {race.location}</p>
                         </div>
                         <div className="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-right">
                           <span className="text-[10px] text-slate-400 block">DORSAL</span>
@@ -581,7 +730,7 @@ export default function App() {
                           onClick={() => toggleRegisterRace(race.id)}
                           className="text-rose-400 hover:underline"
                         >
-                          Desapuntarme
+                          Cancelar inscripción
                         </button>
                       </div>
                     </div>
@@ -596,8 +745,8 @@ export default function App() {
           <div className="space-y-6">
             <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 flex flex-wrap items-center justify-between gap-4">
               <div className="flex items-center gap-4">
-                {stravaAccount?.avatar ? (
-                  <img src={stravaAccount.avatar} alt="Avatar" className="w-12 h-12 rounded-full border-2 border-[#FC4C02]" />
+                {user.stravaAthlete?.avatar ? (
+                  <img src={user.stravaAthlete.avatar} alt="Strava" className="w-12 h-12 rounded-full border-2 border-[#FC4C02]" />
                 ) : (
                   <div className="w-12 h-12 rounded-full bg-[#FC4C02]/20 flex items-center justify-center">
                     <Activity className="w-6 h-6 text-[#FC4C02]" />
@@ -605,44 +754,40 @@ export default function App() {
                 )}
                 <div>
                   <h2 className="text-lg font-bold text-white">
-                    {stravaAccount ? `Cuenta Strava: ${stravaAccount.firstname} ${stravaAccount.lastname} (@${stravaAccount.username})` : 'Cuenta de Strava no vinculada'}
+                    {user.stravaConnected
+                      ? `Strava vinculado a ${user.username}: @${user.stravaAthlete?.username}`
+                      : `Vincular Strava personal de ${user.username}`}
                   </h2>
                   <p className="text-xs text-slate-400">
-                    {stravaAccount
-                      ? `ID de Atleta Strava: ${stravaAccount.id} • ${stravaActivities.length} actividades reales sincronizadas`
-                      : 'Conecta tu cuenta oficial mediante OAuth2 para importar tus entrenamientos y carreras reales.'}
+                    {user.stravaConnected
+                      ? `${stravaActivities.length} actividades reales sincronizadas de tu cuenta.`
+                      : 'Cada usuario que inicia sesión autoriza su propia cuenta de Strava por separado.'}
                   </p>
                 </div>
               </div>
 
-              {stravaAccount ? (
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setShowStravaModal(true)}
-                    className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-white"
-                  >
-                    Cambiar Cuenta Strava
-                  </button>
-                  <button
-                    onClick={handleDisconnectStrava}
-                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 text-xs font-semibold"
-                  >
-                    <Unlink className="w-4 h-4" />
-                    Desconectar
-                  </button>
-                </div>
+              {user.stravaConnected ? (
+                <button
+                  onClick={handleDisconnectMyStrava}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 text-xs font-semibold"
+                >
+                  <Unlink className="w-4 h-4" />
+                  Desconectar Strava
+                </button>
               ) : (
                 <button
-                  onClick={() => setShowStravaModal(true)}
+                  onClick={handleConnectMyStrava}
                   className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#FC4C02] hover:bg-[#e04300] text-white text-xs font-bold shadow-lg shadow-[#FC4C02]/25"
                 >
                   <Link2 className="w-4 h-4" />
-                  Conectar mi Strava Real
+                  Conectar con Strava
                 </button>
               )}
             </div>
 
-            {stravaActivities.length > 0 && (
+            {loadingStrava ? (
+              <div className="text-center py-12 text-slate-400 text-sm">Cargando entrenamientos desde Strava...</div>
+            ) : (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {stravaActivities.map((act) => (
                   <div key={act.id} className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
@@ -650,7 +795,7 @@ export default function App() {
                       <span className="text-xs font-bold px-2 py-0.5 rounded bg-[#FC4C02]/20 text-[#FC4C02]">
                         {act.type}
                       </span>
-                      <span className="text-xs text-slate-400">{act.date}</span>
+                      <span className="text-xs text-amber-300">{formatSpanishDate(act.date)}</span>
                     </div>
                     <h3 className="font-bold text-white text-sm">{act.name}</h3>
                     <div className="grid grid-cols-3 gap-2 text-xs pt-2 border-t border-slate-800">
@@ -675,123 +820,11 @@ export default function App() {
         )}
       </main>
 
-      {/* Modal Cambiar de Usuario */}
-      {showUserModal && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-base font-bold text-white">Cambiar de Usuario / Cuenta</h3>
-              <button onClick={() => setShowUserModal(false)} className="text-slate-400 hover:text-white">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <p className="text-xs text-slate-400">
-              Si usas <strong>jobial24</strong> o <strong>joel.botana@gmail.com</strong> tendrás permisos de Administrador sobre Cloudflare D1. Con cualquier otro nombre entrarás como usuario estándar.
-            </p>
-            <form onSubmit={handleSwitchUser} className="space-y-3 text-xs">
-              <div>
-                <label className="text-slate-400 block mb-1">Nombre de usuario</label>
-                <input
-                  type="text"
-                  required
-                  value={userForm.username}
-                  onChange={(e) => setUserForm({ ...userForm, username: e.target.value })}
-                  className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white"
-                />
-              </div>
-              <div>
-                <label className="text-slate-400 block mb-1">Email</label>
-                <input
-                  type="email"
-                  required
-                  value={userForm.email}
-                  onChange={(e) => setUserForm({ ...userForm, email: e.target.value })}
-                  className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white"
-                />
-              </div>
-              <div className="flex gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setUserForm({ username: 'jobial24', email: 'joel.botana@gmail.com' })}
-                  className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300"
-                >
-                  Rellenar Admin (Joel)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setUserForm({ username: 'unai_runner', email: 'unai@correo.com' })}
-                  className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300"
-                >
-                  Probar otro usuario
-                </button>
-              </div>
-              <button
-                type="submit"
-                className="w-full py-2.5 rounded-xl bg-[#FC4C02] hover:bg-[#e04300] text-white font-bold"
-              >
-                Guardar y Cambiar Usuario
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Modal Conectar Strava OAuth Real */}
-      {showStravaModal && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <Activity className="w-4 h-4 text-[#FC4C02]" />
-                Vincular Cuenta Oficial de Strava
-              </h3>
-              <button onClick={() => setShowStravaModal(false)} className="text-slate-400 hover:text-white">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              En <a href="https://www.strava.com/settings/api" target="_blank" rel="noreferrer" className="text-[#FC4C02] underline">strava.com/settings/api</a>, asegúrate de que en <strong>Authorization Callback Domain</strong> tengas puesto <code>{window.location.hostname}</code>.
-            </p>
-            <form onSubmit={handleStartStravaOAuth} className="space-y-3 text-xs">
-              <div>
-                <label className="text-slate-400 block mb-1">Strava Client ID</label>
-                <input
-                  type="text"
-                  placeholder="Ej: 128492"
-                  required
-                  value={stravaConfig.clientId}
-                  onChange={(e) => setStravaConfig({ ...stravaConfig, clientId: e.target.value })}
-                  className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white"
-                />
-              </div>
-              <div>
-                <label className="text-slate-400 block mb-1">Strava Client Secret</label>
-                <input
-                  type="password"
-                  placeholder="Tu Client Secret de Strava"
-                  required
-                  value={stravaConfig.clientSecret}
-                  onChange={(e) => setStravaConfig({ ...stravaConfig, clientSecret: e.target.value })}
-                  className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white"
-                />
-              </div>
-              <button
-                type="submit"
-                className="w-full py-2.5 rounded-xl bg-[#FC4C02] hover:bg-[#e04300] text-white font-bold"
-              >
-                Autorizar en Strava.com
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Modal Crear Carrera Admin */}
       {showAdminModal && (
         <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-base font-bold text-white">Añadir Carrera a Cloudflare D1</h3>
+              <h3 className="text-base font-bold text-white">Añadir Carrera Manual (Admin)</h3>
               <button onClick={() => setShowAdminModal(false)} className="text-slate-400 hover:text-white">
                 <X className="w-5 h-5" />
               </button>
@@ -799,7 +832,7 @@ export default function App() {
             <form onSubmit={handleCreateRaceAdmin} className="space-y-3 text-xs">
               <input
                 type="text"
-                placeholder="Nombre de la carrera (ej. Cursa dels Nassos)"
+                placeholder="Nombre de la carrera"
                 required
                 value={newRace.name}
                 onChange={(e) => setNewRace({ ...newRace, name: e.target.value })}
@@ -825,7 +858,7 @@ export default function App() {
               </div>
               <input
                 type="text"
-                placeholder="Ubicación (ej. Barcelona, Cataluña)"
+                placeholder="Ubicación (ej. Terrassa, Barcelona)"
                 required
                 value={newRace.location}
                 onChange={(e) => setNewRace({ ...newRace, location: e.target.value })}
@@ -835,7 +868,7 @@ export default function App() {
                 <input
                   type="number"
                   step="0.1"
-                  placeholder="Distancia (km)"
+                  placeholder="Km"
                   value={newRace.distance_km}
                   onChange={(e) => setNewRace({ ...newRace, distance_km: e.target.value })}
                   className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white"
